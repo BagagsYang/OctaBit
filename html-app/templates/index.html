@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎹 MIDI-8bit Synthesiser</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --container-bg: #1e1e1e;
+            --text-color: #f0f0f0;
+            --border-color: #333;
+            --card-bg: #2a2a2a;
+            --item-bg: #2c2c2e;
+            --muted-text: #aaa;
+            --drop-zone-border: #444;
+        }
+
+        [data-bs-theme="light"] {
+            --bg-color: #f4f7f6;
+            --container-bg: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --card-bg: #f8f9fa;
+            --item-bg: #e9ecef;
+            --muted-text: #6c757d;
+            --drop-zone-border: #ced4da;
+        }
+
+        html, body {
+            height: 100%;
+        }
+        body { 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            padding-top: 0;
+            color: var(--text-color);
+        }
+        .container-main { 
+            max-width: 900px; 
+            padding: 30px; 
+            border-radius: 12px; 
+            width: 100%;
+            background-color: var(--container-bg); 
+            color: var(--text-color); 
+            border: 1px solid var(--border-color); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative; 
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .theme-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+            font-size: 1.1rem;
+            z-index: 10;
+            padding: 0;
+            line-height: 1;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            background-color: var(--item-bg);
+        }
+
+        .header { margin-bottom: 30px; text-align: center; }
+        .header h2 { transition: color 0.3s ease; }
+        h6 { transition: color 0.3s ease; }
+        .badge { transition: background-color 0.3s ease, color 0.3s ease; }
+        .btn-primary { background-color: #0d6efd; width: 100%; padding: 12px; font-weight: bold; border-radius: 8px; }
+        #audioPlayer { width: 100%; margin-top: 20px; display: none; border-radius: 10px; }
+        .loading { display: none; margin-top: 15px; }
+        .drop-zone {
+            border: 2px dashed var(--drop-zone-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .drop-zone.dragover {
+            border-color: #007bff;
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        .drop-zone input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .drop-zone-prompt { 
+            font-size: 0.9rem; 
+            color: var(--muted-text); 
+            transition: color 0.3s ease;
+        }
+        .queue-list { list-style-type: none; padding-left: 0; max-height: 250px; overflow-y: auto; }
+        .queue-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 8px 12px; 
+            border-radius: 6px; 
+            margin-bottom: 5px; 
+            cursor: grab; 
+            background-color: var(--item-bg); 
+            color: var(--text-color); 
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .queue-item.dragging { opacity: 0.5; }
+        .queue-item.drag-over { border-top: 2px solid #007bff; }
+        .remove-btn { cursor: pointer; color: #dc3545; font-weight: bold; }
+        
+        .wave-type-group { display: flex; align-items: center; gap: 10px; }
+        .preview-btn {
+            width: 38px; height: 38px; border-radius: 50%;
+            background-color: #0d6efd; color: white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background-color 0.3s ease, transform 0.2s ease;
+            user-select: none; flex-shrink: 0;
+            border: none; padding: 0; font-size: 1.1rem;
+            line-height: 1;
+        }
+        .preview-btn:hover { background-color: #0b5ed7; transform: scale(1.05); }
+        .preview-btn:active { transform: scale(0.95); }
+        
+        .form-label { 
+            color: var(--text-color); 
+            transition: color 0.3s ease;
+        }
+        .layer-card { 
+            background-color: var(--card-bg); 
+            border: 1px solid var(--border-color) !important;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .processing-status { 
+            font-style: italic; 
+            color: var(--muted-text); 
+            transition: color 0.3s ease;
+        }
+
+        .text-muted {
+            transition: color 0.3s ease;
+        }
+
+        /* Slider Contrast */
+        .form-range::-webkit-slider-runnable-track { 
+            background-color: var(--drop-zone-border); 
+            transition: background-color 0.3s ease;
+        }
+        .form-range::-moz-range-track { 
+            background-color: var(--drop-zone-border); 
+            transition: background-color 0.3s ease;
+        }
+        
+         .form-select {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Light Theme Select Overrides */
+        [data-bs-theme="light"] .form-select, 
+        [data-bs-theme="light"] .form-control {
+            background-color: #fff;
+            color: #212529;
+            border-color: #ced4da;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-main">
+    <button type="button" class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Mode"></button>
+    <div class="header">
+        <h2>🎹 MIDI-8bit Synthesiser</h2>
+    </div>
+
+    <form id="synthForm">
+        <div class="row">
+            <!-- Left Column: Queue -->
+            <div class="col-md-5">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">1. MIDI Queue</label>
+                    <div class="drop-zone" id="dropZone">
+                        <span class="drop-zone-prompt" id="dropPrompt">Click or Drag & Drop MIDI Files</span>
+                        <input class="form-control" type="file" id="midi_file" accept=".mid,.midi" multiple>
+                    </div>
+                </div>
+                <ul class="queue-list mb-3" id="queueList">
+                    <!-- Queue items will be injected here -->
+                </ul>
+                <button type="button" class="btn btn-sm btn-outline-danger w-100" id="clearQueueBtn" style="display: none;">Clear Queue</button>
+            </div>
+
+            <!-- Right Column: Controls -->
+            <div class="col-md-7">
+                <div class="mb-4">
+                    <label class="form-label fw-bold">2. Waveform Layers (Max 3)</label>
+                    <p class="text-muted small mb-2">Mix up to 3 different waveforms. Adjust volume for a perfect blend.</p>
+                    
+                    <div id="layersContainer">
+                        <!-- Layer 1 -->
+                        <div class="layer-card mb-3 p-3 border rounded" id="layer_1">
+                            <div class="mb-3">
+                                <label class="form-label small">Waveform Type</label>
+                                <div class="wave-type-group">
+                                    <select class="form-select form-select-sm" id="wave_type1" name="wave_type1" onchange="toggleDuty(1)">
+                                        <option value="pulse" selected>Square/Pulse</option>
+                                        <option value="sine">Sine</option>
+                                        <option value="sawtooth">Sawtooth</option>
+                                        <option value="triangle">Triangle</option>
+                                    </select>
+                                    <button type="button" class="preview-btn" onclick="playPreview(1)" title="Play Preview">▶</button>
+                                </div>
+                            </div>
+                            <div class="mb-3" id="dutyContainer1">
+                                <label class="form-label small">Pulse Width: <span id="dutyVal1">0.5</span></label>
+                                <input type="range" class="form-range" id="duty1" name="duty1" min="0.01" max="0.99" step="0.01" value="0.5" oninput="updateDutyVal(1)">
+                            </div>
+                            <div>
+                                <label class="form-label small">Volume: <span id="volVal1">1.0</span></label>
+                                <input type="range" class="form-range" id="vol1" name="vol1" min="0.0" max="2.0" step="0.1" value="1.0" oninput="updateVolVal(1)">
+                            </div>
+                        </div>
+
+                        <!-- Layer 2 & 3 are similar, hidden by default -->
+                        <div class="layer-card mb-3 p-3 border rounded" id="layer_2" style="display: none;">
+                             <div class="mb-3">
+                                <label class="form-label small">Waveform Type</label>
+                                <div class="wave-type-group">
+                                    <select class="form-select form-select-sm" id="wave_type2" name="wave_type2" onchange="toggleDuty(2)" disabled>
+                                        <option value="sine" selected>Sine</option>
+                                        <option value="pulse">Square/Pulse</option>
+                                        <option value="sawtooth">Sawtooth</option>
+                                        <option value="triangle">Triangle</option>
+                                    </select>
+                                    <button type="button" class="preview-btn" onclick="playPreview(2)" title="Play Preview">▶</button>
+                                </div>
+                            </div>
+                            <div class="mb-3" id="dutyContainer2" style="display: none;">
+                                <label class="form-label small">Pulse Width: <span id="dutyVal2">0.5</span></label>
+                                <input type="range" class="form-range" id="duty2" name="duty2" min="0.01" max="0.99" step="0.01" value="0.5" oninput="updateDutyVal(2)" disabled>
+                            </div>
+                            <div>
+                                <label class="form-label small">Volume: <span id="volVal2">0.5</span></label>
+                                <input type="range" class="form-range" id="vol2" name="vol2" min="0.0" max="2.0" step="0.1" value="0.5" oninput="updateVolVal(2)" disabled>
+                            </div>
+                        </div>
+
+                         <div class="layer-card mb-3 p-3 border rounded" id="layer_3" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label small">Waveform Type</label>
+                                <div class="wave-type-group">
+                                    <select class="form-select form-select-sm" id="wave_type3" name="wave_type3" onchange="toggleDuty(3)" disabled>
+                                        <option value="triangle" selected>Triangle</option>
+                                        <option value="pulse">Square/Pulse</option>
+                                        <option value="sine">Sine</option>
+                                        <option value="sawtooth">Sawtooth</option>
+                                    </select>
+                                    <button type="button" class="preview-btn" onclick="playPreview(3)" title="Play Preview">▶</button>
+                                </div>
+                            </div>
+                            <div class="mb-3" id="dutyContainer3" style="display: none;">
+                                <label class="form-label small">Pulse Width: <span id="dutyVal3">0.5</span></label>
+                                <input type="range" class="form-range" id="duty3" name="duty3" min="0.01" max="0.99" step="0.01" value="0.5" oninput="updateDutyVal(3)" disabled>
+                            </div>
+                            <div>
+                                <label class="form-label small">Volume: <span id="volVal3">0.5</span></label>
+                                <input type="range" class="form-range" id="vol3" name="vol3" min="0.0" max="2.0" step="0.1" value="0.5" oninput="updateVolVal(3)" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mb-4">
+                        <button type="button" class="btn btn-sm btn-outline-secondary w-100 fw-bold" id="addLayerBtn">+ Add Layer</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger w-100 fw-bold" id="removeLayerBtn" style="display: none;">- Remove Layer</button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">3. Sample Rate</label>
+                    <select class="form-select" name="rate">
+                        <option value="44100">44100 Hz</option>
+                        <option value="48000" selected>48000 Hz</option>
+                        <option value="96000">96000 Hz</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="submitBtn">Synthesise Queue (<span id="queueCount">0</span>)</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="loading text-center">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2" id="processingStatus">Generating audio...</p>
+    </div>
+
+    <audio id="audioPlayer" controls></audio>
+</div>
+
+<script>
+    // Global State
+    let fileQueue = [];
+    let layerCount = 1;
+    const maxLayers = 3;
+
+    // DOM Elements
+    const synthForm = document.getElementById('synthForm');
+    const loading = document.querySelector('.loading');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const submitBtn = document.getElementById('submitBtn');
+    const htmlElement = document.documentElement;
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('midi_file');
+    const queueList = document.getElementById('queueList');
+    const clearQueueBtn = document.getElementById('clearQueueBtn');
+    const queueCountSpan = document.getElementById('queueCount');
+    const processingStatus = document.getElementById('processingStatus');
+    const themeToggle = document.getElementById('themeToggle');
+
+    // --- Theme Management ---
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    htmlElement.setAttribute('data-bs-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = htmlElement.getAttribute('data-bs-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        htmlElement.setAttribute('data-bs-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+    });
+
+    function updateThemeIcon(theme) {
+        // Show the icon of the mode it WILL change to
+        themeToggle.textContent = theme === 'dark' ? '🌞' : '🌛';
+    }
+
+    // --- Queue Management & Drag-to-Reorder ---
+    function renderQueue() {
+        queueList.innerHTML = '';
+        fileQueue.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.className = 'queue-item';
+            li.setAttribute('draggable', 'true');
+            li.setAttribute('data-index', index);
+            li.innerHTML = `
+                <span class="text-truncate small">${file.name}</span>
+                <span class="remove-btn" onclick="removeFromQueue(${index})">✖</span>
+            `;
+            queueList.appendChild(li);
+        });
+        queueCountSpan.textContent = fileQueue.length;
+        clearQueueBtn.style.display = fileQueue.length > 0 ? 'block' : 'none';
+        submitBtn.disabled = fileQueue.length === 0;
+    }
+
+    let dragStartIndex;
+    queueList.addEventListener('dragstart', (e) => {
+        dragStartIndex = parseInt(e.target.dataset.index);
+        e.target.classList.add('dragging');
+    });
+    queueList.addEventListener('dragend', (e) => e.target.classList.remove('dragging'));
+    queueList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const target = e.target.closest('.queue-item');
+        if (!target) return;
+        document.querySelectorAll('.queue-item').forEach(item => item.classList.remove('drag-over'));
+        target.classList.add('drag-over');
+    });
+    queueList.addEventListener('dragleave', (e) => {
+        if (e.target.classList.contains('queue-item')) e.target.classList.remove('drag-over');
+    });
+    queueList.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const target = e.target.closest('.queue-item');
+        if (!target) return;
+        target.classList.remove('drag-over');
+        const dragEndIndex = parseInt(target.dataset.index);
+        const [draggedItem] = fileQueue.splice(dragStartIndex, 1);
+        fileQueue.splice(dragEndIndex, 0, draggedItem);
+        renderQueue();
+    });
+
+    function addToQueue(files) {
+        for (const file of files) if (file.type === "audio/midi") fileQueue.push(file);
+        renderQueue();
+    }
+    window.removeFromQueue = (index) => { fileQueue.splice(index, 1); renderQueue(); };
+    clearQueueBtn.addEventListener('click', () => { fileQueue = []; renderQueue(); });
+
+    // --- Drag & Drop ---
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    ['dragleave', 'dragend'].forEach(type => dropZone.addEventListener(type, () => dropZone.classList.remove('dragover')));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) addToQueue(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', () => addToQueue(fileInput.files));
+
+    // --- Layer Management ---
+    function toggleDuty(layerId) {
+        document.getElementById(`dutyContainer${layerId}`).style.display = (document.getElementById(`wave_type${layerId}`).value === 'pulse') ? 'block' : 'none';
+    }
+    function updateDutyVal(layerId) {
+        document.getElementById(`dutyVal${layerId}`).textContent = document.getElementById(`duty${layerId}`).value;
+    }
+    function updateVolVal(layerId) {
+        document.getElementById(`volVal${layerId}`).textContent = document.getElementById(`vol${layerId}`).value;
+    }
+    document.getElementById('addLayerBtn').addEventListener('click', () => {
+        if (layerCount < maxLayers) {
+            layerCount++;
+            document.getElementById(`layer_${layerCount}`).style.display = 'block';
+            ['wave_type', 'duty', 'vol'].forEach(p => document.getElementById(`${p}${layerCount}`).disabled = false);
+            updateButtons();
+        }
+    });
+    document.getElementById('removeLayerBtn').addEventListener('click', () => {
+        if (layerCount > 1) {
+            ['wave_type', 'duty', 'vol'].forEach(p => document.getElementById(`${p}${layerCount}`).disabled = true);
+            document.getElementById(`layer_${layerCount}`).style.display = 'none';
+            layerCount--;
+            updateButtons();
+        }
+    });
+    function updateButtons() {
+        const addBtn = document.getElementById('addLayerBtn');
+        const removeBtn = document.getElementById('removeLayerBtn');
+        addBtn.style.display = layerCount === maxLayers ? 'none' : 'block';
+        removeBtn.style.display = layerCount === 1 ? 'none' : 'block';
+    }
+
+    // --- Preview Logic ---
+    let previewAudio = new Audio();
+    function playPreview(layerId) {
+        const type = document.getElementById(`wave_type${layerId}`).value;
+        const duty = parseFloat(document.getElementById(`duty${layerId}`).value);
+        let src = (type === 'pulse') ? `pulse_${(duty < 0.18) ? '10' : (duty < 0.38) ? '25' : '50'}.wav` : `${type}.wav`;
+        previewAudio.src = `/static/previews/${src}`;
+        previewAudio.play().catch(e => console.error("Preview failed:", e));
+        const btn = document.querySelectorAll('.preview-btn')[layerId - 1];
+        btn.style.transform = "scale(0.9)";
+        setTimeout(() => btn.style.transform = "", 150);
+    }
+
+    // --- Form Submission ---
+    synthForm.onsubmit = async (e) => {
+        e.preventDefault();
+        loading.style.display = 'block';
+        submitBtn.disabled = true;
+        const originalForm = new FormData(synthForm);
+        const filesToProcess = [...fileQueue];
+        for (let i = 0; i < filesToProcess.length; i++) {
+            const file = filesToProcess[i];
+            processingStatus.textContent = `Processing ${i + 1} of ${filesToProcess.length}: ${file.name}`;
+            const formData = new FormData();
+            for (let [key, value] of originalForm.entries()) if(key !== 'midi_file') formData.append(key, value);
+            formData.append('midi_file', file);
+            try {
+                const response = await fetch('/synthesise', { method: 'POST', body: formData });
+                if (!response.ok) { alert(`Error processing ${file.name}: ${(await response.json()).error}`); continue; }
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const originalName = file.name.split('.').slice(0, -1).join('.');
+                const suffix = layerCount > 1 ? "mix" : document.getElementById('wave_type1').value;
+                a.download = `${originalName}_${suffix}.wav`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) { alert(`An error occurred while processing ${file.name}.`); }
+        }
+        loading.style.display = 'none'; submitBtn.disabled = false; fileQueue = []; renderQueue();
+    };
+    
+    renderQueue(); updateButtons();
+</script>
+
+</body>
+</html>
