@@ -7,6 +7,16 @@ from scipy.io import wavfile
 
 VALID_WAVE_TYPES = {"pulse", "sine", "sawtooth", "triangle"}
 
+
+def _parse_layer_number(layer, layer_index, field_name, default_value):
+    raw_value = layer.get(field_name, default_value)
+    try:
+        return float(raw_value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Layer {layer_index} {field_name} must be a number."
+        ) from exc
+
 def generate_waveform(freq, duration, sample_rate, wave_type='pulse', duty_cycle=0.5):
     """Generates various audio waveforms."""
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
@@ -132,17 +142,19 @@ def parse_layers_json(layers_json):
             raise ValueError(f"Layer {index} must be an object.")
 
         wave_type = layer.get('type', 'pulse')
+        if not isinstance(wave_type, str):
+            raise ValueError(f"Layer {index} waveform type must be a string.")
         if wave_type not in VALID_WAVE_TYPES:
             raise ValueError(
                 f"Layer {index} has unsupported waveform '{wave_type}'. "
                 f"Expected one of: {', '.join(sorted(VALID_WAVE_TYPES))}."
             )
 
-        duty = float(layer.get('duty', 0.5))
+        duty = _parse_layer_number(layer, index, 'duty', 0.5)
         if not 0.01 <= duty <= 0.99:
             raise ValueError(f"Layer {index} duty must be between 0.01 and 0.99.")
 
-        volume = float(layer.get('volume', 1.0))
+        volume = _parse_layer_number(layer, index, 'volume', 1.0)
         if volume < 0:
             raise ValueError(f"Layer {index} volume must be 0 or greater.")
 
