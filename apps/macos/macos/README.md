@@ -18,3 +18,15 @@ This folder contains the native macOS app packaging and build notes.
 - That script freezes `core/python-renderer/midi_to_wave.py` into a bundled helper binary with PyInstaller.
 - The same script copies the canonical preview WAV assets from `assets/previews/` into the app bundle.
 - The app launches the bundled helper directly for each queued MIDI file, so no Flask server or browser is involved.
+
+## Current layer controls
+
+- Each layer still has waveform, pulse width, and base volume controls.
+- Layers can now optionally enable a frequency-gain curve that is evaluated against each note's fundamental frequency during export.
+- The inline curve editor uses a log-frequency x-axis and a dB y-axis, with up to 8 draggable points per layer.
+- Export naming matches the current web/core behavior: single-layer exports keep the waveform suffix, multi-layer exports use `_mix`, and curve-bearing exports append a stable hash suffix.
+- The existing preview button is still a raw waveform preview; it does not yet render the frequency curve into the preview sound.
+
+## Tests
+
+- The shared `MIDI8BitSynthesiser` scheme now includes a lightweight `MIDI8BitSynthesiserTests` XCTest target for pure model, payload, and filename logic.
