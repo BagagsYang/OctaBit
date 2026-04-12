@@ -1,10 +1,12 @@
+# macOS app
+
+This folder contains the native macOS app packaging and build notes.
+
 ## Build
 
 1. Install full Xcode.
-2. Recreate or refresh the repo-local virtual environment:
-   `python3 -m venv .venv`
-3. Install the macOS build dependencies:
-   `./.venv/bin/python3 -m pip install -r apps/macos/requirements-build.txt`
+2. Recreate or refresh the repo-local virtual environment: `python3 -m venv .venv`
+3. Install the macOS build dependencies: `./.venv/bin/python3 -m pip install -r apps/macos/requirements-build.txt`
 4. Open `apps/macos/MIDI8BitSynthesiser.xcodeproj` and run the `MIDI8BitSynthesiser` scheme.
 
 ## How the app works

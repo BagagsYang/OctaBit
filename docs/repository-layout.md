@@ -1,6 +1,8 @@
-# Repository Layout
+# Repository layout
 
-This repository stays as one monorepo, but the layout is now explicit:
+This repository stays as one monorepo, and the layout is explicit.
+
+## Layout
 
 - `apps/web-flask/`: legacy Flask/browser UI
 - `apps/macos/`: Xcode project, SwiftUI app, macOS build helper
@@ -10,7 +12,7 @@ This repository stays as one monorepo, but the layout is now explicit:
 - `assets/previews/`: canonical preview WAV assets
 - `docs/reviews/`: review artifacts and reports
 
-Conventions:
+## Notes
 
 - Platform-specific UI, packaging, and release logic stays under `apps/`.
 - Shared renderer logic stays under `core/`.

@@ -14,14 +14,14 @@ This repository is a reorganised monorepo for the MIDI-8bit Synthesiser product 
 | `assets/previews/` | Canonical waveform preview WAV files used by all apps |
 | `docs/` | Reviews and repository structure notes |
 
-## Shared Contract
+## Shared contract
 
 - Canonical renderer entrypoint: `core/python-renderer/midi_to_wave.py`
 - Stable inputs: MIDI path, output WAV path, sample rate, waveform layers
 - Stable output: rendered WAV file or explicit error
 - Windows intentionally keeps a native C# implementation and validates it against the Python renderer in parity tests
 
-## Build Notes
+## Build notes
 
 Create the repo-local environment at the repository root:
 
@@ -31,12 +31,9 @@ python3 -m venv .venv
 
 Install only the dependencies needed for the app you are working on:
 
-- Web UI:
-  `./.venv/bin/python3 -m pip install -r apps/web-flask/requirements.txt`
-- macOS helper build:
-  `./.venv/bin/python3 -m pip install -r apps/macos/requirements-build.txt`
-- Windows parity tests:
-  `./.venv/bin/python3 -m pip install -r core/python-renderer/requirements.txt`
+- Web UI: `./.venv/bin/python3 -m pip install -r apps/web-flask/requirements.txt`
+- macOS helper build: `./.venv/bin/python3 -m pip install -r apps/macos/requirements-build.txt`
+- Windows parity tests: `./.venv/bin/python3 -m pip install -r core/python-renderer/requirements.txt`
 
 App-specific instructions live in:
 
@@ -48,5 +45,4 @@ Repository layout notes live in `docs/repository-layout.md`.
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 or later
-(`AGPL-3.0-or-later`). See the [LICENSE](LICENSE) file for full details.
+This project is licensed under the GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`). See the [LICENSE](LICENSE) file for full details.

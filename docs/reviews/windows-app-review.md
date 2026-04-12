@@ -1,8 +1,8 @@
-# Windows App Review Report: MIDI-8bit Synthesiser
+# Windows app review report: MIDI-8bit Synthesiser
 
 > Note: this report predates the repository reorganisation under `apps/`, `core/`, and `assets/`. Historical path references below still use the older layout.
 
-## 1. Environment
+## Environment
 
 - **Windows version:** Windows 10 Pro for Workstations (2009 / Build 26100.1)
 - **.NET SDK/runtime versions:** .NET SDK **NOT INSTALLED**. Only .NET Framework 4.0.30319 is present. `dotnet` command is not on PATH and not found anywhere under `C:\Program Files`.
@@ -13,9 +13,8 @@
   - Python packages: `pretty_midi` 0.2.11, `numpy` 2.4.3, `scipy` 1.17.1 (all available)
 - **UI interaction available:** No (blocked by missing .NET SDK — cannot launch WinUI app)
 
----
 
-## 2. Commands Run
+## Commands run
 
 ```powershell
 # Verify dotnet availability
@@ -47,11 +46,9 @@ dotnet publish src/Midi8BitSynthesiser.App/Midi8BitSynthesiser.App.csproj `
     -c Release -r win-x64 --self-contained true -p:Platform=x64
 ```
 
----
+## Build and test results
 
-## 3. Build and Test Results
-
-### 3.1 Restore — **BLOCKED**
+### Restore: blocked
 
 ```
 dotnet : The term 'dotnet' is not recognized as the name of a cmdlet, function,
@@ -60,15 +57,13 @@ script file, or operable program.
 
 **Root cause:** .NET SDK is not installed on this machine. The VS2022 BuildTools installation does not include the .NET SDK workload by default.
 
-### 3.2 Build — **NOT ATTEMPTED** (blocked by restore)
+### Build: not attempted (blocked by restore)
 
-### 3.3 Test — **NOT ATTEMPTED** (blocked by build)
+### Test: not attempted (blocked by build)
 
-### 3.4 Publish — **NOT ATTEMPTED** (blocked by build)
+### Publish: not attempted (blocked by build)
 
----
-
-## 4. Manual App Validation
+## Manual app validation
 
 **UI interaction:** Not possible — no WinUI runtime and no .NET SDK to launch the app.
 
@@ -81,11 +76,9 @@ script file, or operable program.
 - Output naming (`FileNameBuilder`) ✓ Reviewed
 - Preview playback (PreviewAudioPlayer) ✓ Reviewed
 
----
+## Findings
 
-## 5. Findings
-
-### Finding 1 — `WaveFileWriter` Used Incorrectly in `WriteWaveFile`
+### Finding 1: `WaveFileWriter` used incorrectly in `WriteWaveFile`
 - **Severity:** critical
 - **Confidence:** high
 - **Evidence:** `SynthesisRenderEngine.cs` lines 133–141:
@@ -115,9 +108,8 @@ if (samples.Count > 0)
 }
 ```
 
----
 
-### Finding 2 — Attack Envelope Bug When `waveform.Length == 1`
+### Finding 2: attack envelope bug when `waveform.Length == 1`
 - **Severity:** high
 - **Confidence:** high
 - **Evidence:** `SynthesisRenderEngine.cs` lines 83–93:
@@ -154,9 +146,8 @@ for (var index = 0; index < attackSamples; index++)
 ```
 (Also update the release loop to match — but the release special case is actually numerically correct since both C# and Python reach exactly 0.0 at the end.)
 
----
 
-### Finding 3 — Test Project Platform Mismatch with Core Project
+### Finding 3: test project platform mismatch with core project
 - **Severity:** high
 - **Confidence:** medium
 - **Evidence:**
@@ -174,9 +165,8 @@ for (var index = 0; index < attackSamples; index++)
 
 - **Recommended fix:** Add `<Platforms>x64</Platforms>` to `Core.csproj`, matching the test and app projects.
 
----
 
-### Finding 4 — `RepoRootLocator.Find()` Path Traversal May Fail in Some Test Run Configurations
+### Finding 4: `RepoRootLocator.Find()` path traversal may fail in some test run configurations
 - **Severity:** medium
 - **Confidence:** medium
 - **Evidence:** `TestData/RepoRootLocator.cs`:
@@ -198,9 +188,8 @@ throw new DirectoryNotFoundException("...");
 
 - **Recommended fix:** Use `Path.GetFullPath` relative to the solution file location, or encode the solution root as an MSBuild property injected into the test assembly at build time (e.g., `<PropertyGroup><SharedDir>$(SolutionDir)</SharedDir></PropertyGroup>` in the test csproj and passed as `[assembly: AssemblyMetadata("SharedDir", "...")]`).
 
----
 
-### Finding 5 — `FileDialogService.PickOutputFolderAsync` Uses Incorrect Fallback Location
+### Finding 5: `FileDialogService.PickOutputFolderAsync` uses incorrect fallback location
 - **Severity:** low
 - **Confidence:** high
 - **Evidence:** `Services/FileDialogService.cs` lines 33–37:
@@ -223,9 +212,8 @@ picker.SuggestedStartLocation = Directory.Exists(defaultDirectory)
 ```
 Or better: track the last-used output folder in a persistent setting and use that.
 
----
 
-### Finding 6 — No CI Workflow File Found
+### Finding 6: no CI workflow file found
 - **Severity:** medium
 - **Confidence:** high
 - **Evidence:** The README states:
@@ -258,9 +246,8 @@ jobs:
         run: dotnet publish windows-app/src/Midi8BitSynthesiser.App/Midi8BitSynthesiser.App.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64 -o ./publish
 ```
 
----
 
-### Finding 7 — `AddLayer()` Boundary Condition When `Layers.Count == 1`
+### Finding 7: `AddLayer()` boundary condition when `Layers.Count == 1`
 - **Severity:** low
 - **Confidence:** low
 - **Evidence:** `ViewModels/MainWindowViewModel.cs` lines 149–157:
@@ -280,9 +267,8 @@ Layers.Add(defaults[Math.Min(Layers.Count - 1, defaults.Length - 1)]);
 
 - **Recommended fix:** Replace with a more explicit index: `defaults[Math.Min(Layers.Count, defaults.Length - 1)]` or an indexed lookup table.
 
----
 
-### Finding 8 — `WaveFileAssertions.ReadWaveFile` Ignores Wave Format on Read
+### Finding 8: `WaveFileAssertions.ReadWaveFile` ignores wave format on read
 - **Severity:** low
 - **Confidence:** medium
 - **Evidence:** `TestData/WaveFileAssertions.cs`:
@@ -302,9 +288,8 @@ return new WaveFileData(reader.WaveFormat.SampleRate, reader.WaveFormat.Channels
 
 - **Recommended fix:** Use `reader.ReadSamples(count)` to let NAudio handle the format conversion and data interpretation correctly, rather than reading raw bytes.
 
----
 
-### Finding 9 — `PreviewAudioPlayer` Stop/Dispose Race on Concurrent Calls
+### Finding 9: `PreviewAudioPlayer` stop and dispose race on concurrent calls
 - **Severity:** low
 - **Confidence:** medium
 - **Evidence:** `Services/PreviewAudioPlayer.cs`:
@@ -333,9 +318,8 @@ public Task PlayAsync(WaveLayer layer, CancellationToken cancellationToken)
 
 - **Recommended fix:** Add a lock object or use `CancellationToken`-driven cancellation instead of manual stop/dispose.
 
----
 
-### Finding 10 — Python Parity Test Uses `python` Without Path Qualification
+### Finding 10: Python parity test uses `python` without path qualification
 - **Severity:** medium
 - **Confidence:** high
 - **Evidence:** `PythonParityTests.cs`:
@@ -353,11 +337,10 @@ var pythonProcess = new Process { StartInfo = new ProcessStartInfo { FileName = 
 FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "py" : "python3",
 ```
 
----
 
-## 6. Non-blocking Observations
+## Non-blocking observations
 
-### Design Mismatches
+### Design mismatches
 
 1. **`IRenderEngine` is a top-level class in its file** (`IRenderEngine.cs`) — `IRenderEngine`, `RenderRequest`, and `RenderResult` are all top-level classes in separate single-class files. `RenderRequest` and `RenderResult` are closely related to the rendering contract and should arguably live together or in a dedicated `Contracts/` namespace.
 
@@ -365,7 +348,7 @@ FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "py" : "python3
 
 3. **Mix of responsibilities in `MainWindowViewModel`** — `MainWindowViewModel` handles both the queue management (add/remove/reorder files) and the layer management. These could be separate concerns with a `QueueViewModel` and a `LayerStackViewModel`.
 
-### UX Rough Edges
+### UX rough edges
 
 4. **No progress reporting per-file during batch conversion** — `StartConversionAsync` updates `StatusMessage` but provides no per-job progress (e.g., percent complete within a file). For long batches, the user sees only "Processing N of M: filename".
 
@@ -375,7 +358,7 @@ FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "py" : "python3
 
 7. **No validation of output folder before starting batch** — If the user lacks write permission to the selected output folder, the error is reported per-file as each `RenderAsync` call fails, rather than up-front when the folder is selected.
 
-### Maintainability Concerns
+### Maintainability concerns
 
 8. **`SynthesisRenderEngine.RenderInternal` is 130+ lines** — The method handles MIDI reading, buffer allocation, note iteration, envelope, normalization, PCM conversion, and file writing. Each phase should be a separate private method for clarity.
 
@@ -387,19 +370,17 @@ FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "py" : "python3
     - No test for `FileNameBuilder` with mixed-case input paths
     - No test for `PreviewAudioPlayer` with missing asset files
 
-### Test Coverage Gaps
+### Test coverage gaps
 
 11. **Empty queue export** — `CanStartConversion` returns `Queue.Count > 0 && !IsProcessing`. The Export button would be disabled, so this path is UI-protected. But if called directly on the ViewModel, `StartConversionAsync` would not guard against it.
 
 12. **All notes on drum channel** — The `RenderAsync_IgnoresDrumNotes` test verifies drum notes are skipped, but does not verify that a mix of drum notes and pitched notes only renders the pitched notes.
 
----
-
-## 7. Report Summary
+## Report summary
 
 **Overall status:** Partially working — build blocked (missing .NET SDK), code review reveals critical bugs and medium-severity design issues.
 
-### Build/Test Status
+### Build and test status
 | Step | Result |
 |------|--------|
 | Restore | ❌ BLOCKED — .NET SDK not installed |
@@ -408,7 +389,7 @@ FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "py" : "python3
 | Publish | ❌ NOT ATTEMPTED |
 | Python parity | ✅ Verified (script works end-to-end) |
 
-### Top 3 Issues to Fix First
+### Top 3 issues to fix first
 
 1. **`WriteWaveFile` corruption bug (Finding 1, critical):** Must switch from manual `writer.Write(bytes)` to `writer.WriteSamples()`. Without this fix, exported WAV files are likely to be unreadable or silent when written with non-empty audio. Fix is 3 lines in `SynthesisRenderEngine.cs`.
 
@@ -416,7 +397,7 @@ FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "py" : "python3
 
 3. **Platform mismatch in Core project (Finding 3, high):** Core.csproj must be updated with `<Platforms>x64</Platforms>` to match the test project. Without this, the test project may fail to load Core at runtime even if build succeeds. A one-line change.
 
-### Items Requiring .NET SDK to Validate
+### Items requiring .NET SDK to validate
 Once .NET 8 SDK is installed, the following must be verified:
 - Solution restore succeeds
 - Build completes without errors or warnings

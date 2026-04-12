@@ -1,4 +1,4 @@
-# Web Flask App
+# Web Flask app
 
 This folder contains the legacy browser-distributed version of the MIDI-8bit Synthesiser.
 
@@ -32,14 +32,14 @@ On Windows, use:
 apps\web-flask\Launch_Synthesiser.bat
 ```
 
-## Shared Dependencies
+## Shared dependencies
 
 - Renderer: `../../core/python-renderer/midi_to_wave.py`
 - Canonical preview assets: `../../assets/previews/`
 
 This app serves preview WAVs from the shared asset folder and should not duplicate renderer logic.
 
-## Current Upload Contract
+## Current upload contract
 
 `POST /synthesise` uses `multipart/form-data` with:
 
@@ -56,7 +56,7 @@ Each layer object contains:
 
 The browser UI stores layer state in JavaScript and serialises it into `layers_json`.
 
-## Output Naming
+## Output naming
 
 - Single audible layer without a curve: `<original>_<wave>.wav`
 - Multiple audible layers without a curve: `<original>_mix.wav`

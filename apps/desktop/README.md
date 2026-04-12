@@ -1,4 +1,4 @@
-# Desktop Placeholder
+# Desktop placeholder
 
 This folder preserves the old `desktop-app/` slot as an explicit placeholder.
 

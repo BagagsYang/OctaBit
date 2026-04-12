@@ -1,14 +1,13 @@
-# Python Renderer
+# Python renderer
 
 This folder contains the canonical Python MIDI-to-WAV renderer used directly by the Flask app and macOS helper build, and indirectly by the Windows parity tests.
 
-## Public Interface
+## Public interface
 
 - Module: `midi_to_wave.py`
 - Primary function: `midi_to_audio(midi_path, output_path, sample_rate=48000, layers=None)`
-- CLI entrypoint:
-  - positional args: input MIDI path, output WAV path
-  - options: `--type`, `--duty`, `--rate`, `--layers-json`
+- CLI positional arguments: input MIDI path, output WAV path
+- CLI options: `--type`, `--duty`, `--rate`, `--layers-json`
 
 ## Contract
 
@@ -16,7 +15,7 @@ This folder contains the canonical Python MIDI-to-WAV renderer used directly by 
 - Output is a rendered WAV file written to disk
 - Invalid configuration should fail with an explicit error instead of falling back silently, except for the documented default single pulse layer when no audible layers are supplied
 
-## Layer Schema
+## Layer schema
 
 Each layer contains:
 
@@ -25,8 +24,7 @@ Each layer contains:
 - `volume`: linear base gain, validated as `>= 0`
 - `frequency_curve`: optional array of `{frequency_hz, gain_db}` points
 
-Frequency curves are evaluated against each rendered note's fundamental frequency.
-The evaluated curve gain multiplies the layer's base `volume` for that note.
+Frequency curves are evaluated against each rendered note's fundamental frequency. The evaluated curve gain multiplies the layer's base `volume` for that note.
 
 Curve rules:
 
@@ -41,7 +39,7 @@ Curve rules:
 
 UI code, packaging code, and platform-specific launch behavior should stay outside this folder.
 
-## Dependency Scope
+## Dependency scope
 
 - `requirements.txt` contains only the renderer/runtime dependencies.
 - Web-specific packages live in `apps/web-flask/requirements.txt`.
