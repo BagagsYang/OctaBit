@@ -15,6 +15,8 @@
             --item-bg: #2c2c2e;
             --muted-text: #aaa;
             --drop-zone-border: #444;
+            --curve-panel-bg: rgba(13, 110, 253, 0.06);
+            --curve-panel-border: rgba(13, 110, 253, 0.18);
             --curve-grid: rgba(255, 255, 255, 0.12);
             --curve-fill: rgba(13, 110, 253, 0.14);
         }
@@ -28,6 +30,8 @@
             --item-bg: #e9ecef;
             --muted-text: #6c757d;
             --drop-zone-border: #ced4da;
+            --curve-panel-bg: rgba(13, 110, 253, 0.04);
+            --curve-panel-border: rgba(13, 110, 253, 0.14);
             --curve-grid: rgba(33, 37, 41, 0.14);
             --curve-fill: rgba(13, 110, 253, 0.10);
         }
@@ -281,8 +285,9 @@
             margin-top: 16px;
             padding: 14px;
             border-radius: 10px;
-            background: rgba(13, 110, 253, 0.06);
-            border: 1px solid rgba(13, 110, 253, 0.18);
+            background-color: var(--curve-panel-bg);
+            border: 1px solid var(--curve-panel-border);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .curve-toolbar {
@@ -306,6 +311,7 @@
             border: 1px solid var(--border-color);
             border-radius: 8px;
             touch-action: none;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
         .curve-grid-line,
