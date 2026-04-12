@@ -353,6 +353,17 @@
                 </div>
                 <ul class="queue-list mb-3" id="queueList"></ul>
                 <button type="button" class="btn btn-sm btn-outline-danger w-100" id="clearQueueBtn" style="display: none;">Clear Queue</button>
+                <div class="form-check form-switch mt-3">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        role="switch"
+                        id="keepQueueToggle"
+                    >
+                    <label class="form-check-label small" for="keepQueueToggle">
+                        Keep queue after synthesising.
+                    </label>
+                </div>
             </div>
 
             <div class="col-md-7">
@@ -441,6 +452,7 @@
     const fileInput = document.getElementById('midi_file');
     const queueList = document.getElementById('queueList');
     const clearQueueBtn = document.getElementById('clearQueueBtn');
+    const keepQueueToggle = document.getElementById('keepQueueToggle');
     const queueCountSpan = document.getElementById('queueCount');
     const processingStatus = document.getElementById('processingStatus');
     const themeToggle = document.getElementById('themeToggle');
@@ -448,10 +460,12 @@
     const addLayerBtn = document.getElementById('addLayerBtn');
     const removeLayerBtn = document.getElementById('removeLayerBtn');
     const rateSelect = document.getElementById('rate');
+    const savedKeepQueuePreference = localStorage.getItem('keepQueueAfterSynth');
 
     const savedTheme = localStorage.getItem('theme') || 'dark';
     htmlElement.setAttribute('data-bs-theme', savedTheme);
     updateThemeIcon(savedTheme);
+    keepQueueToggle.checked = savedKeepQueuePreference === 'true';
 
     themeToggle.addEventListener('click', () => {
         const currentTheme = htmlElement.getAttribute('data-bs-theme');
@@ -459,6 +473,10 @@
         htmlElement.setAttribute('data-bs-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         updateThemeIcon(newTheme);
+    });
+
+    keepQueueToggle.addEventListener('change', () => {
+        localStorage.setItem('keepQueueAfterSynth', keepQueueToggle.checked);
     });
 
     function updateThemeIcon(theme) {
@@ -1053,7 +1071,9 @@
 
         loading.style.display = 'none';
         submitBtn.disabled = false;
-        fileQueue = failedFiles;
+        if (!keepQueueToggle.checked) {
+            fileQueue = failedFiles;
+        }
         renderQueue();
         fileInput.value = '';
     };
