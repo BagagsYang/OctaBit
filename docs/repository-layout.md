@@ -1,5 +1,7 @@
 # Repository layout
 
+Language: English | [简体中文](./repository-layout.zh-CN.md)
+
 This repository stays as one monorepo, and the layout is explicit.
 
 ## Layout

@@ -1,5 +1,7 @@
 # Windows app
 
+Language: English | [简体中文](./README.zh-CN.md)
+
 This folder contains the native Windows desktop rewrite of the MIDI-8bit Synthesiser.
 
 ## Responsibilities

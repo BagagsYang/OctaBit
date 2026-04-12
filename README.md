@@ -1,5 +1,7 @@
 # MIDI-8bit Synthesiser
 
+Language: English | [简体中文](./README.zh-CN.md)
+
 This repository is a reorganised monorepo for the MIDI-8bit Synthesiser product family. Platform-specific apps live under `apps/`, the Python reference renderer lives under `core/`, and shared preview assets live under `assets/`.
 
 ## Layout
@@ -14,7 +16,7 @@ This repository is a reorganised monorepo for the MIDI-8bit Synthesiser product 
 | `assets/previews/` | Canonical waveform preview WAV files used by all apps |
 | `docs/` | Reviews and repository structure notes |
 
-## Shared contract
+## Shared renderer
 
 - Canonical renderer entrypoint: `core/python-renderer/midi_to_wave.py`
 - Stable inputs: MIDI path, output WAV path, sample rate, waveform layers
