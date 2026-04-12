@@ -400,9 +400,9 @@
     const curveLogSpan = Math.log(MAX_CURVE_FREQUENCY_HZ) - Math.log(MIN_CURVE_FREQUENCY_HZ);
     const layerPresets = [
         { type: 'pulse', duty: 0.5, volume: 1.0 },
-        { type: 'sine', duty: 0.5, volume: 0.5 },
-        { type: 'triangle', duty: 0.5, volume: 0.5 },
-        { type: 'sawtooth', duty: 0.5, volume: 0.5 },
+        { type: 'sine', duty: 0.5, volume: 1.0 },
+        { type: 'triangle', duty: 0.5, volume: 1.0 },
+        { type: 'sawtooth', duty: 0.5, volume: 1.0 },
     ];
     const maxLayers = layerPresets.length;
 
