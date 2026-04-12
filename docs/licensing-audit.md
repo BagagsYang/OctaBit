@@ -55,14 +55,13 @@ Tracked files reviewed for this update:
   used across app outputs according to `assets/README.md` and the Windows
   project file.
 - `assets/README.md` now records a maintainer-provided provenance description
-  for the preview WAV files: they are project-specific preview/test assets; the
-  underlying MIDI material was generated with LLM assistance from the
-  maintainer's prompts; and the WAV files themselves were rendered by this
-  repository's own program.
+  for the preview WAV files: they are project-generated preview/test assets for
+  waveform and timbre auditioning, rendered by this project's own program from
+  maintainer-directed MIDI test material.
 - The same provenance description states that, to the maintainer's knowledge,
   the preview WAV files are not derived from third-party sample packs or
   externally licensed audio recordings, and that they are intended to be
-  redistributed with repository and app outputs as project preview assets.
+  redistributed with the project and its app outputs.
 
 ## Dependency assessments that rely on external metadata
 

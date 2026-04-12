@@ -10,19 +10,9 @@ Usage:
 
 ## Preview Asset Provenance
 
-The files under `assets/previews/` are project-specific preview/test assets used
-to let users audition waveform and timbre output.
-
-Their documented workflow is:
-
-- the underlying MIDI test material was generated with LLM assistance based on
-  the maintainer's prompts
-- those MIDI files were then rendered into the preview WAV files by this
-  repository's own program
-
-The WAV files themselves were therefore not directly generated audio from an
-LLM. To the maintainer's knowledge, they are not derived from third-party sample
-packs or externally licensed audio recordings.
-
-These files are intended to be redistributed with the repository and app outputs
-as project preview assets.
+The preview WAV files in `assets/previews/` are project-generated preview/test
+assets created for waveform and timbre auditioning. They were rendered by this
+project's own program from maintainer-directed MIDI test material. To the
+maintainer's knowledge, they are not derived from third-party sample packs or
+externally licensed audio recordings, and they are intended to be redistributed
+with the project and its app outputs.
