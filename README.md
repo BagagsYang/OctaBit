@@ -45,4 +45,4 @@ Repository layout notes live in `docs/repository-layout.md`.
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`). See the [LICENSE](LICENSE) file for full details.
+This project is licensed under the GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`). See the [LICENSE](LICENSE.md) file for full details.
