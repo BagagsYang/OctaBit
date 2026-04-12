@@ -1,3 +1,16 @@
+# Copyright (C) 2026 Jeremy Yang
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+
 import argparse
 import json
 import math
@@ -191,6 +204,7 @@ def evaluate_frequency_curve_gain_db(curve_points, frequency_hz):
 
     return curve_points[-1]["gain_db"]
 
+
 def generate_waveform(freq, duration, sample_rate, wave_type='pulse', duty_cycle=0.5):
     """Generates various audio waveforms."""
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
@@ -212,6 +226,7 @@ def generate_waveform(freq, duration, sample_rate, wave_type='pulse', duty_cycle
     
     return np.zeros_like(t)
 
+
 def apply_envelope(waveform, sample_rate, attack=0.005, release=0.005):
     """Applies a simple linear attack/release envelope to prevent clicks."""
     if len(waveform) == 0: return waveform
@@ -221,6 +236,7 @@ def apply_envelope(waveform, sample_rate, attack=0.005, release=0.005):
     if attack_samples > 0: envelope[:attack_samples] = np.linspace(0, 1, attack_samples)
     if release_samples > 0: envelope[-release_samples:] = np.linspace(1, 0, release_samples)
     return waveform * envelope
+
 
 def midi_to_audio(midi_path, output_path, sample_rate=48000, layers=None):
     layers = normalise_runtime_layers(layers)
