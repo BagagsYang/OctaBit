@@ -43,6 +43,15 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("MIDI 队列", response.get_data(as_text=True))
         self.assertIn("web_locale=zh-CN", response.headers.get("Set-Cookie", ""))
 
+    def test_index_includes_language_switch_state_preservation_script(self):
+        response = self.client.get("/")
+        self.addCleanup(response.close)
+
+        body = response.get_data(as_text=True)
+        self.assertIn("persistLanguageSwitchState", body)
+        self.assertIn("restoreLanguageSwitchState", body)
+        self.assertIn("pendingLanguageSwitchState", body)
+
     def test_synthesise_localises_missing_file_error_from_cookie(self):
         self.client.set_cookie(web_app.LOCALE_COOKIE_NAME, "zh-CN")
         response = self.client.post(
