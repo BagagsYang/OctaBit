@@ -493,18 +493,36 @@
             text-transform: uppercase;
         }
 
-        .readout {
-            min-width: 52px;
-            padding: 3px 7px;
-            border-radius: 6px;
+            .readout {
+                width: 64px;
+                min-height: 32px;
+                padding: 3px 8px;
+                border-radius: 6px;
             color: var(--accent-strong);
             background: var(--panel-bg-inset);
-            border: 1px solid rgba(199, 122, 67, 0.24);
-            font-family: "Courier New", ui-monospace, monospace;
-            font-size: 0.78rem;
-            text-align: right;
-            box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.35);
+                border: 1px solid rgba(199, 122, 67, 0.24);
+                font-family: "Courier New", ui-monospace, monospace;
+                font-size: 0.78rem;
+                text-align: center;
+                appearance: textfield;
+                -moz-appearance: textfield;
+                box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.35);
+            }
+
+        .readout:focus {
+            outline: none;
+            border-color: rgba(199, 122, 67, 0.62);
+            box-shadow:
+                inset 0 1px 8px rgba(0, 0, 0, 0.35),
+                0 0 0 2px rgba(199, 122, 67, 0.12);
         }
+
+            .readout::-webkit-inner-spin-button,
+            .readout::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                appearance: none;
+                margin: 0;
+            }
 
         .fader-shell {
             padding: 4px 0;
@@ -1785,7 +1803,17 @@
                 <div class="field-block" style="display: ${layer.type === 'pulse' ? 'grid' : 'none'};">
                     <label class="fader-label" for="dutyFader${layerIndex}">
                         <span>${t('layer.pulse_width')}</span>
-                        <span class="readout" id="dutyValue${layerIndex}">${layer.duty.toFixed(2)}</span>
+                        <input
+                            type="number"
+                            class="readout"
+                            id="dutyValue${layerIndex}"
+                            min="0.01"
+                            max="0.99"
+                            step="0.01"
+                            value="${layer.duty.toFixed(2)}"
+                            inputmode="decimal"
+                            onchange="updateLayerDuty(${layerIndex}, this.value, this)"
+                        >
                     </label>
                     <div class="fader-shell">
                         <input
@@ -1804,7 +1832,17 @@
                 <div class="field-block">
                     <label class="fader-label" for="volumeFader${layerIndex}">
                         <span>${t('layer.base_volume')}</span>
-                        <span class="readout" id="volumeValue${layerIndex}">${layer.volume.toFixed(1)}</span>
+                        <input
+                            type="number"
+                            class="readout"
+                            id="volumeValue${layerIndex}"
+                            min="0.00"
+                            max="2.00"
+                            step="0.01"
+                            value="${layer.volume.toFixed(2)}"
+                            inputmode="decimal"
+                            onchange="updateLayerVolume(${layerIndex}, this.value, this)"
+                        >
                     </label>
                     <div class="fader-shell">
                         <input
@@ -1813,7 +1851,7 @@
                             id="volumeFader${layerIndex}"
                             min="0.0"
                             max="2.0"
-                            step="0.1"
+                            step="0.01"
                             value="${layer.volume}"
                             style="--fill: ${faderFillPercent(layer.volume, 0.0, 2.0)}"
                             oninput="updateLayerVolume(${layerIndex}, this.value, this)"
@@ -1907,24 +1945,38 @@
         renderLayers();
     }
 
+    function normaliseDecimalInput(value, min, max) {
+        const parsedValue = parseFloat(value);
+        const finiteValue = Number.isFinite(parsedValue) ? parsedValue : min;
+        return Number(clamp(finiteValue, min, max).toFixed(2));
+    }
+
     function updateLayerDuty(layerIndex, value, input = null) {
-        const duty = parseFloat(value);
+        const duty = normaliseDecimalInput(value, 0.01, 0.99);
         layers[layerIndex].duty = duty;
         const dutyValue = document.getElementById(`dutyValue${layerIndex}`);
         if (dutyValue) {
-            dutyValue.textContent = duty.toFixed(2);
+            dutyValue.value = duty.toFixed(2);
         }
-        updateFaderFill(input || document.getElementById(`dutyFader${layerIndex}`));
+        const dutyFader = document.getElementById(`dutyFader${layerIndex}`);
+        if (dutyFader) {
+            dutyFader.value = duty.toFixed(2);
+        }
+        updateFaderFill(dutyFader || input);
     }
 
     function updateLayerVolume(layerIndex, value, input = null) {
-        const volume = parseFloat(value);
+        const volume = normaliseDecimalInput(value, 0.0, 2.0);
         layers[layerIndex].volume = volume;
         const volumeValue = document.getElementById(`volumeValue${layerIndex}`);
         if (volumeValue) {
-            volumeValue.textContent = volume.toFixed(1);
+            volumeValue.value = volume.toFixed(2);
         }
-        updateFaderFill(input || document.getElementById(`volumeFader${layerIndex}`));
+        const volumeFader = document.getElementById(`volumeFader${layerIndex}`);
+        if (volumeFader) {
+            volumeFader.value = volume.toFixed(2);
+        }
+        updateFaderFill(volumeFader || input);
     }
 
     function toggleCurveEnabled(layerIndex, enabled) {
