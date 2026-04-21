@@ -7,244 +7,678 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #121212;
-            --container-bg: #1e1e1e;
-            --text-color: #f0f0f0;
-            --border-color: #333;
-            --card-bg: #2a2a2a;
-            --item-bg: #2c2c2e;
-            --muted-text: #aaa;
-            --drop-zone-border: #444;
-            --curve-panel-bg: rgba(13, 110, 253, 0.06);
-            --curve-panel-border: rgba(13, 110, 253, 0.18);
-            --curve-grid: rgba(255, 255, 255, 0.12);
-            --curve-fill: rgba(13, 110, 253, 0.14);
+            color-scheme: dark;
+            --bg-color: #171616;
+            --bg-plate: #22211f;
+            --panel-bg: #2c2b28;
+            --panel-bg-raised: #34322f;
+            --panel-bg-inset: #171716;
+            --text-color: #eee9df;
+            --muted-text: #a9a198;
+            --subtle-text: #756e67;
+            --border-color: #4a4641;
+            --border-strong: #686057;
+            --track-bg: #121211;
+            --accent: #c77a43;
+            --accent-strong: #dc8f54;
+            --accent-muted: rgba(199, 122, 67, 0.18);
+            --accent-glow: rgba(199, 122, 67, 0.34);
+            --success: #8aa58c;
+            --danger: #c7695e;
+            --curve-panel-bg: rgba(199, 122, 67, 0.08);
+            --curve-panel-border: rgba(199, 122, 67, 0.24);
+            --curve-grid: rgba(238, 233, 223, 0.13);
+            --curve-fill: rgba(199, 122, 67, 0.14);
         }
 
-        [data-bs-theme="light"] {
-            --bg-color: #f4f7f6;
-            --container-bg: #ffffff;
-            --text-color: #212529;
-            --border-color: #dee2e6;
-            --card-bg: #f8f9fa;
-            --item-bg: #e9ecef;
-            --muted-text: #6c757d;
-            --drop-zone-border: #ced4da;
-            --curve-panel-bg: rgba(13, 110, 253, 0.04);
-            --curve-panel-border: rgba(13, 110, 253, 0.14);
-            --curve-grid: rgba(33, 37, 41, 0.14);
-            --curve-fill: rgba(13, 110, 253, 0.10);
-        }
-
-        html, body {
+        html,
+        body {
             min-height: 100%;
         }
 
         body {
             margin: 0;
             min-height: 100vh;
-            background-color: var(--bg-color);
-            transition: background-color 0.3s ease, color 0.3s ease;
-            padding: 24px 12px;
+            background:
+                linear-gradient(135deg, rgba(238, 233, 223, 0.035) 0 1px, transparent 1px 14px),
+                radial-gradient(circle at 20% 10%, rgba(199, 122, 67, 0.08), transparent 28rem),
+                linear-gradient(145deg, #181716, #22211f 48%, #171616);
             color: var(--text-color);
+            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
             overflow-y: auto;
+            padding: 24px;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
         }
 
         .container-main {
-            max-width: 980px;
-            padding: 30px;
-            border-radius: 12px;
-            width: 100%;
-            background-color: var(--container-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            position: relative;
+            width: min(100%, 1380px);
+            min-height: calc(100vh - 48px);
             margin: 0 auto;
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            color: var(--text-color);
+        }
+
+        .control-shell {
+            min-height: calc(100vh - 48px);
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 32%),
+                repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 5px),
+                var(--bg-plate);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+                0 28px 80px rgba(0, 0, 0, 0.36);
+            padding: clamp(16px, 2.4vw, 28px);
+        }
+
+        .control-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .brand-lockup {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            gap: 14px;
+        }
+
+        .logo-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            color: var(--accent-strong);
+            background:
+                linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.18)),
+                var(--panel-bg);
+            border: 1px solid var(--border-strong);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.12),
+                inset 0 -8px 18px rgba(0, 0, 0, 0.22);
+            flex: 0 0 44px;
+        }
+
+        .logo-bars {
+            display: grid;
+            grid-template-columns: repeat(4, 4px);
+            align-items: end;
+            gap: 3px;
+            height: 24px;
+        }
+
+        .logo-bars span {
+            display: block;
+            width: 4px;
+            border-radius: 2px;
+            background: currentColor;
+            box-shadow: 0 0 14px var(--accent-glow);
+        }
+
+        .logo-bars span:nth-child(1) { height: 10px; }
+        .logo-bars span:nth-child(2) { height: 18px; }
+        .logo-bars span:nth-child(3) { height: 14px; }
+        .logo-bars span:nth-child(4) { height: 24px; }
+
+        .brand-title {
+            margin: 0;
+            font-family: "Silkscreen", "Courier New", ui-monospace, monospace;
+            font-size: clamp(1.35rem, 3vw, 2.45rem);
+            line-height: 1;
+            letter-spacing: 0;
+            text-transform: uppercase;
+            overflow-wrap: anywhere;
+        }
+
+        .brand-subtitle {
+            margin-top: 7px;
+            color: var(--muted-text);
+            font-size: 0.86rem;
         }
 
         .top-controls {
-            position: absolute;
-            top: 15px;
-            right: 15px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            z-index: 10;
+            justify-content: flex-end;
+            gap: 10px;
+            flex: 0 0 auto;
         }
 
-        .theme-toggle {
-            width: 32px;
-            height: 32px;
-            min-width: 32px;
-            min-height: 32px;
-            aspect-ratio: 1 / 1;
-            flex: 0 0 32px;
-            box-sizing: border-box;
-            border-radius: 50%;
-            border: 1px solid var(--border-color);
-            background-color: var(--card-bg);
+        .language-select,
+        .control-select {
+            min-height: 38px;
+            border-radius: 8px;
+            padding: 0 36px 0 12px;
+            background-color: var(--panel-bg-inset);
             color: var(--text-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
-            font-size: 1.1rem;
-            padding: 0;
-            line-height: 1;
-        }
-
-        .theme-toggle:hover {
-            transform: scale(1.1);
-            background-color: var(--item-bg);
+            border: 1px solid var(--border-color);
+            box-shadow:
+                inset 0 1px 8px rgba(0, 0, 0, 0.42),
+                0 1px 0 rgba(255, 255, 255, 0.06);
         }
 
         .language-select {
-            min-width: 126px;
-            height: 32px;
-            border-radius: 999px;
-            padding-top: 0;
-            padding-bottom: 0;
-            padding-left: 12px;
-            padding-right: 32px;
-            background-color: var(--card-bg);
-            color: var(--text-color);
+            min-width: 138px;
+            font-size: 0.86rem;
+        }
+
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.9fr);
+            gap: clamp(16px, 2vw, 24px);
+            margin-top: 22px;
+        }
+
+        .module {
             border: 1px solid var(--border-color);
-            font-size: 0.85rem;
-        }
-
-        .header {
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .btn-primary {
-            background-color: #0d6efd;
-            width: 100%;
-            padding: 12px;
-            font-weight: bold;
             border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 36%),
+                var(--panel-bg);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                inset 0 -14px 28px rgba(0, 0, 0, 0.16);
+            padding: clamp(14px, 1.7vw, 20px);
         }
 
-        .loading {
-            display: none;
-            margin-top: 15px;
+        .module + .module {
+            margin-top: 16px;
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .module-title {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 0.86rem;
+            font-weight: 800;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        .module-readout {
+            min-width: 30px;
+            padding: 3px 7px;
+            border-radius: 6px;
+            color: var(--accent-strong);
+            background: var(--panel-bg-inset);
+            border: 1px solid rgba(199, 122, 67, 0.24);
+            font-family: "Courier New", ui-monospace, monospace;
+            font-size: 0.78rem;
+            text-align: center;
+            box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.35);
         }
 
         .drop-zone {
-            border: 2px dashed var(--drop-zone-border);
+            min-height: 168px;
+            border: 1px dashed rgba(238, 233, 223, 0.28);
             border-radius: 8px;
-            padding: 20px;
+            padding: 18px;
+            display: grid;
+            place-items: center;
             text-align: center;
-            transition: border-color 0.3s ease, background-color 0.3s ease;
             cursor: pointer;
             position: relative;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+                repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 8px),
+                var(--panel-bg-inset);
+            box-shadow:
+                inset 0 2px 14px rgba(0, 0, 0, 0.48),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
         }
 
         .drop-zone.dragover {
-            border-color: #007bff;
-            background-color: rgba(0, 123, 255, 0.1);
+            border-color: var(--accent-strong);
+            box-shadow:
+                inset 0 2px 14px rgba(0, 0, 0, 0.48),
+                0 0 0 3px var(--accent-muted),
+                0 0 30px var(--accent-glow);
+            transform: translateY(-1px);
         }
 
         .drop-zone input[type="file"] {
             position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
-            top: 0;
-            left: 0;
             opacity: 0;
             cursor: pointer;
         }
 
         .drop-zone-prompt {
-            font-size: 0.9rem;
-            color: var(--muted-text);
-            transition: color 0.3s ease;
+            pointer-events: none;
+            display: grid;
+            gap: 8px;
+            color: var(--text-color);
+            font-weight: 800;
         }
 
-        .queue-list {
-            list-style-type: none;
+        .drop-zone-hint {
+            color: var(--muted-text);
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+
+        .module-divider {
+            height: 1px;
+            margin: 18px 0;
+            background: linear-gradient(90deg, transparent, rgba(238, 233, 223, 0.18), transparent);
+        }
+
+        .panel-list {
+            list-style: none;
             padding-left: 0;
-            max-height: 250px;
-            overflow-y: auto;
+            margin: 0;
+            display: grid;
+            gap: 8px;
+            max-height: 230px;
+            overflow: auto;
+        }
+
+        .queue-item,
+        .converted-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+            min-height: 44px;
+            padding: 9px 10px;
+            border-radius: 8px;
+            color: var(--text-color);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+                var(--panel-bg-inset);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.28);
         }
 
         .queue-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-bottom: 5px;
             cursor: grab;
-            background-color: var(--item-bg);
-            color: var(--text-color);
-            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .queue-item.dragging {
-            opacity: 0.5;
+            opacity: 0.58;
+            cursor: grabbing;
         }
 
         .queue-item.drag-over {
-            border-top: 2px solid #007bff;
+            border-top-color: var(--accent-strong);
+            box-shadow:
+                inset 0 1px 8px rgba(0, 0, 0, 0.28),
+                0 -2px 0 var(--accent-strong);
+        }
+
+        .file-name {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.86rem;
+        }
+
+        .file-meta {
+            color: var(--muted-text);
+            font-family: "Courier New", ui-monospace, monospace;
+            font-size: 0.74rem;
+        }
+
+        .empty-state {
+            margin: 0;
+            min-height: 44px;
+            border: 1px dashed rgba(238, 233, 223, 0.18);
+            border-radius: 8px;
+            color: var(--muted-text);
+            display: grid;
+            place-items: center;
+            padding: 12px;
+            font-size: 0.84rem;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.12);
+        }
+
+        .remove-btn,
+        .download-btn,
+        .utility-btn {
+            min-height: 32px;
+            border-radius: 7px;
+            border: 1px solid var(--border-color);
+            background: var(--panel-bg-raised);
+            color: var(--text-color);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 0 10px;
+            transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .remove-btn {
-            cursor: pointer;
-            color: #dc3545;
-            font-weight: bold;
+            width: 32px;
+            padding: 0;
+            color: var(--danger);
+            font-weight: 800;
         }
 
-        .wave-type-group {
+        .download-btn {
+            color: var(--success);
+            font-size: 0.82rem;
+            text-decoration: none;
+        }
+
+        .utility-btn:hover,
+        .download-btn:hover,
+        .remove-btn:hover {
+            border-color: var(--accent-strong);
+            color: var(--accent-strong);
+            transform: translateY(-1px);
+        }
+
+        .utility-btn:disabled {
+            background-color: var(--panel-bg-inset);
+            border-color: var(--border-color);
+            color: var(--subtle-text);
+            cursor: not-allowed;
+            opacity: 1;
+            transform: none;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: end;
+            margin-bottom: 14px;
+        }
+
+        .layer-card {
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+                rgba(20, 20, 19, 0.38);
+            box-shadow: inset 0 1px 12px rgba(0, 0, 0, 0.22);
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        .layer-title-row {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .layer-title {
+            font-weight: 800;
+            color: var(--text-color);
+        }
+
+        .layer-state {
+            color: var(--muted-text);
+            font-size: 0.8rem;
         }
 
         .preview-btn {
             width: 38px;
             height: 38px;
-            border-radius: 50%;
-            background-color: #0d6efd;
-            color: white;
+            border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.15), rgba(0, 0, 0, 0.1)),
+                var(--accent);
+            color: #211713;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             user-select: none;
             flex-shrink: 0;
-            border: none;
+            border: 1px solid rgba(255, 255, 255, 0.14);
             padding: 0;
-            font-size: 1.1rem;
+            font-size: 1rem;
             line-height: 1;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                inset 0 -8px 14px rgba(0, 0, 0, 0.18);
         }
 
-        .preview-btn:hover {
-            background-color: #0b5ed7;
-            transform: scale(1.05);
+        .preview-btn:hover,
+        .preview-btn:focus-visible {
+            transform: translateY(-1px);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                inset 0 -8px 14px rgba(0, 0, 0, 0.18),
+                0 0 20px var(--accent-glow);
         }
 
         .preview-btn:active {
-            transform: scale(0.95);
+            transform: translateY(1px);
         }
 
-        .layer-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color) !important;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+        .field-block {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .field-label,
+        .fader-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--muted-text);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .readout {
+            min-width: 52px;
+            padding: 3px 7px;
+            border-radius: 6px;
+            color: var(--accent-strong);
+            background: var(--panel-bg-inset);
+            border: 1px solid rgba(199, 122, 67, 0.24);
+            font-family: "Courier New", ui-monospace, monospace;
+            font-size: 0.78rem;
+            text-align: right;
+            box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.35);
+        }
+
+        .fader-shell {
+            padding: 4px 0;
+            border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+                var(--track-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow:
+                inset 0 2px 10px rgba(0, 0, 0, 0.62),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+        }
+
+        .fader-input {
+            --fill: 0%;
+            width: 100%;
+            height: 24px;
+            display: block;
+            margin: 0;
+            padding: 0 4px;
+            box-sizing: border-box;
+            appearance: none;
+            border-radius: 6px;
+            background:
+                linear-gradient(90deg, var(--accent) 0 var(--fill), transparent var(--fill) 100%),
+                transparent;
+            background-clip: content-box;
+            border: 0;
+            box-shadow: none;
+            cursor: pointer;
+            transition: box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .fader-input:focus-visible,
+        .fader-input:active,
+        .fader-input.is-dragging {
+            outline: none;
+            box-shadow: none;
+        }
+
+        .fader-input::-webkit-slider-thumb {
+            appearance: none;
+            width: 22px;
+            height: 28px;
+            border-radius: 7px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background:
+                linear-gradient(90deg, transparent 0 8px, rgba(0, 0, 0, 0.32) 8px 10px, transparent 10px 100%),
+                linear-gradient(180deg, #d9d0c0, #8d8377);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                0 2px 8px rgba(0, 0, 0, 0.45);
+        }
+
+        .fader-input::-moz-range-thumb {
+            width: 22px;
+            height: 28px;
+            border-radius: 7px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background:
+                linear-gradient(90deg, transparent 0 8px, rgba(0, 0, 0, 0.32) 8px 10px, transparent 10px 100%),
+                linear-gradient(180deg, #d9d0c0, #8d8377);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                0 2px 8px rgba(0, 0, 0, 0.45);
+        }
+
+        .fader-input::-moz-range-track {
+            background: transparent;
+            border: 0;
+        }
+
+        .control-switch {
+            margin-top: 14px;
+        }
+
+        .control-switch-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .control-switch-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--muted-text);
+            cursor: pointer;
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+
+        .control-switch-track {
+            width: 64px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            padding: 3px;
+            border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+                var(--panel-bg-inset);
+            border: 1px solid var(--border-color);
+            box-shadow:
+                inset 0 2px 10px rgba(0, 0, 0, 0.56),
+                inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .control-switch-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background:
+                linear-gradient(90deg, transparent 0 9px, rgba(0, 0, 0, 0.22) 9px 11px, transparent 11px 100%),
+                linear-gradient(180deg, #9a9992, #5e5d58);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.28),
+                0 2px 7px rgba(0, 0, 0, 0.42);
+            transform: translateX(0);
+            transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .control-switch-input:checked + .control-switch-label .control-switch-track {
+            border-color: rgba(199, 122, 67, 0.38);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+                rgba(199, 122, 67, 0.08);
+            box-shadow:
+                inset 0 2px 10px rgba(0, 0, 0, 0.52),
+                0 0 8px rgba(199, 122, 67, 0.12);
+        }
+
+        .control-switch-input:checked + .control-switch-label .control-switch-thumb {
+            transform: translateX(30px);
+            background:
+                linear-gradient(90deg, transparent 0 9px, rgba(0, 0, 0, 0.24) 9px 11px, transparent 11px 100%),
+                linear-gradient(180deg, #c99167, #a86138);
+        }
+
+        .control-switch-input:focus-visible + .control-switch-label .control-switch-track {
+            border-color: var(--accent-strong);
+            box-shadow:
+                inset 0 2px 10px rgba(0, 0, 0, 0.52),
+                0 0 0 3px var(--accent-muted);
+        }
+
+        .layer-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        #addLayerBtn:disabled {
+            background-color: var(--panel-bg-inset);
+            border-color: var(--border-color);
+            color: var(--subtle-text);
+            cursor: not-allowed;
+            opacity: 1;
         }
 
         .curve-panel {
             margin-top: 16px;
             padding: 14px;
-            border-radius: 10px;
-            background-color: var(--curve-panel-bg);
+            border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+                var(--curve-panel-bg);
             border: 1px solid var(--curve-panel-border);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            box-shadow: inset 0 1px 14px rgba(0, 0, 0, 0.28);
+            transition: background-color 0.22s ease, border-color 0.22s ease;
         }
 
         .curve-toolbar {
@@ -255,7 +689,7 @@
         }
 
         .curve-summary {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: var(--muted-text);
             margin-bottom: 8px;
         }
@@ -264,11 +698,14 @@
             width: 100%;
             height: auto;
             display: block;
-            background-color: var(--container-bg);
-            border: 1px solid var(--border-color);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+                var(--panel-bg-inset);
+            border: 1px solid rgba(255, 255, 255, 0.09);
             border-radius: 8px;
             touch-action: none;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            box-shadow: inset 0 2px 16px rgba(0, 0, 0, 0.45);
+            transition: background-color 0.22s ease, border-color 0.22s ease;
         }
 
         .curve-grid-line,
@@ -278,14 +715,14 @@
         }
 
         .curve-zero-line {
-            stroke: rgba(220, 53, 69, 0.45);
+            stroke: rgba(138, 165, 140, 0.55);
             stroke-width: 1.2;
             stroke-dasharray: 4 4;
         }
 
         .curve-path {
             fill: none;
-            stroke: #0d6efd;
+            stroke: var(--accent-strong);
             stroke-width: 2.5;
         }
 
@@ -295,14 +732,15 @@
         }
 
         .curve-point {
-            fill: #ffffff;
-            stroke: #0d6efd;
+            fill: #efe6d8;
+            stroke: var(--accent-strong);
             stroke-width: 2;
             cursor: pointer;
         }
 
         .curve-point.selected {
-            fill: #0d6efd;
+            fill: var(--accent-strong);
+            filter: drop-shadow(0 0 5px var(--accent-glow));
         }
 
         .curve-axis-label {
@@ -311,62 +749,167 @@
             user-select: none;
         }
 
-        .text-muted {
-            transition: color 0.3s ease;
+        .action-rail {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.9fr);
+            align-items: center;
+            gap: 16px;
+            margin-top: 20px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+                rgba(20, 20, 19, 0.52);
         }
 
-        .form-range::-webkit-slider-runnable-track {
-            background-color: var(--drop-zone-border);
-            transition: background-color 0.3s ease;
+        .status-cluster {
+            min-width: 0;
         }
 
-        .form-range::-moz-range-track {
-            background-color: var(--drop-zone-border);
-            transition: background-color 0.3s ease;
-        }
-
-        .form-switch .form-check-input {
-            cursor: pointer;
-            transition: background-position 0.15s ease-in-out, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .form-switch .form-check-label {
-            cursor: pointer;
-        }
-
-        #addLayerBtn {
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
-        }
-
-        #addLayerBtn:disabled {
-            background-color: var(--item-bg);
-            border-color: var(--border-color);
+        .queue-count-label {
             color: var(--muted-text);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 6px;
+            color: var(--accent-strong);
+            font-family: "Courier New", ui-monospace, monospace;
+            font-size: 0.84rem;
+        }
+
+        .loading.is-visible {
+            display: block;
+        }
+
+        .loading .spinner-border {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.16rem;
+            color: var(--accent-strong);
+            margin-right: 8px;
+        }
+
+        .process-btn {
+            min-height: 62px;
+            width: 100%;
+            min-width: 0;
+            justify-self: stretch;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #211713;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0;
+            background:
+                radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.22), transparent 38%),
+                linear-gradient(180deg, #d49260, #b66635);
+            box-shadow:
+                inset 0 2px 0 rgba(255, 255, 255, 0.26),
+                inset 0 -12px 22px rgba(0, 0, 0, 0.2),
+                0 8px 0 #5a3324,
+                0 18px 34px rgba(0, 0, 0, 0.38);
+            transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+        }
+
+        .process-btn:hover:not(:disabled),
+        .process-btn:focus-visible:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow:
+                inset 0 2px 0 rgba(255, 255, 255, 0.26),
+                inset 0 -12px 22px rgba(0, 0, 0, 0.2),
+                0 9px 0 #5a3324,
+                0 0 26px var(--accent-glow),
+                0 20px 40px rgba(0, 0, 0, 0.42);
+        }
+
+        .process-btn:active:not(:disabled) {
+            transform: translateY(5px);
+            box-shadow:
+                inset 0 2px 0 rgba(255, 255, 255, 0.2),
+                inset 0 -8px 18px rgba(0, 0, 0, 0.2),
+                0 3px 0 #5a3324,
+                0 12px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .process-btn:disabled {
+            opacity: 0.54;
             cursor: not-allowed;
-            opacity: 1;
+            filter: saturate(0.55);
         }
 
-        .form-select {
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        .text-muted {
+            color: var(--muted-text) !important;
         }
 
-        [data-bs-theme="light"] .form-select,
-        [data-bs-theme="light"] .form-control,
-        [data-bs-theme="light"] .language-select {
-            background-color: #fff;
-            color: #212529;
-            border-color: #ced4da;
-        }
+        @media (max-width: 980px) {
+            body {
+                padding: 14px;
+            }
 
-        @media (max-width: 767px) {
-            .container-main {
-                padding: 22px 18px;
+            .container-main,
+            .control-shell {
+                min-height: calc(100vh - 28px);
+            }
+
+            .workspace-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .control-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .action-rail {
+                grid-template-columns: 1fr;
+                align-items: stretch;
             }
 
             .top-controls {
-                position: static;
-                justify-content: flex-end;
-                margin-bottom: 16px;
+                justify-content: flex-start;
+            }
+
+            .process-btn {
+                width: 100%;
+                min-width: 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 8px;
+            }
+
+            .control-shell {
+                padding: 14px;
+            }
+
+            .brand-lockup {
+                align-items: flex-start;
+            }
+
+            .logo-mark {
+                width: 38px;
+                height: 38px;
+                flex-basis: 38px;
+            }
+
+            .brand-title {
+                font-size: 1.28rem;
+            }
+
+            .control-row,
+            .layer-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .drop-zone {
+                min-height: 140px;
             }
         }
     </style>
@@ -374,82 +917,126 @@
 <body>
 
 <div class="container-main">
-    <div class="top-controls">
-        <select
-            class="form-select form-select-sm language-select"
-            id="languageSelect"
-            title="{{ translations['toolbar.language_title'] }}"
-            aria-label="{{ translations['toolbar.language_title'] }}"
-        >
-            {% for language_code in supported_locales %}
-            <option value="{{ language_code }}" {% if language_code == locale %}selected{% endif %}>{{ translations["toolbar.language_option." ~ language_code] }}</option>
-            {% endfor %}
-        </select>
-        <button
-            type="button"
-            class="theme-toggle"
-            id="themeToggle"
-            title="{{ translations['toolbar.toggle_theme'] }}"
-            aria-label="{{ translations['toolbar.toggle_theme'] }}"
-        ></button>
-    </div>
-
-    <div class="header">
-        <h2>{{ translations["meta.page_title"] }}</h2>
-    </div>
-
-    <form id="synthForm">
-        <div class="row g-4">
-            <div class="col-md-5">
-                <div class="mb-4">
-                    <label class="form-label fw-bold">{{ translations["queue.title"] }}</label>
-                    <div class="drop-zone" id="dropZone">
-                        <span class="drop-zone-prompt">{{ translations["queue.drop_prompt"] }}</span>
-                        <input class="form-control" type="file" id="midi_file" accept=".mid,.midi" multiple>
+    <div class="control-shell">
+        <header class="control-header">
+            <div class="brand-lockup">
+                <div class="logo-mark" aria-hidden="true">
+                    <div class="logo-bars">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
                     </div>
                 </div>
-                <ul class="queue-list mb-3" id="queueList"></ul>
-                <button type="button" class="btn btn-sm btn-outline-danger w-100" id="clearQueueBtn" style="display: none;">{{ translations["queue.clear"] }}</button>
-                <div class="form-check form-switch mt-3">
-                    <input
-                        class="form-check-input"
-                        type="checkbox"
-                        role="switch"
-                        id="keepQueueToggle"
-                    >
-                    <label class="form-check-label small" for="keepQueueToggle">
-                        {{ translations["queue.keep_after"] }}
-                    </label>
+                <div>
+                    <h1 class="brand-title">{{ translations["meta.page_title"] }}</h1>
+                    <div class="brand-subtitle">{{ translations["meta.subtitle"] }}</div>
                 </div>
             </div>
+            <div class="top-controls">
+                <select
+                    class="form-select form-select-sm language-select"
+                    id="languageSelect"
+                    title="{{ translations['toolbar.language_title'] }}"
+                    aria-label="{{ translations['toolbar.language_title'] }}"
+                >
+                    {% for language_code in supported_locales %}
+                    <option value="{{ language_code }}" {% if language_code == locale %}selected{% endif %}>{{ translations["toolbar.language_option." ~ language_code] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </header>
 
-            <div class="col-md-7">
-                <div class="mb-4">
-                    <label class="form-label fw-bold">{{ translations["layers.title"] }}</label>
-                    <div id="layersContainer"></div>
-                    <div class="d-flex gap-2 mb-4">
-                        <button type="button" class="btn btn-sm btn-outline-secondary w-100 fw-bold" id="addLayerBtn">{{ translations["layers.add"] }}</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger w-100 fw-bold" id="removeLayerBtn">{{ translations["layers.remove"] }}</button>
+        <form id="synthForm">
+            <div class="workspace-grid">
+                <aside class="file-column" aria-label="{{ translations['files.operations'] }}">
+                    <section class="module">
+                        <div class="module-header">
+                            <h2 class="module-title">{{ translations["files.upload"] }}</h2>
+                        </div>
+                        <div class="drop-zone" id="dropZone">
+                            <span class="drop-zone-prompt">
+                                {{ translations["queue.drop_prompt"] }}
+                                <span class="drop-zone-hint">{{ translations["queue.drop_hint"] }}</span>
+                            </span>
+                            <input class="form-control" type="file" id="midi_file" accept=".mid,.midi" multiple>
+                        </div>
+                        <div class="module-divider"></div>
+                        <div class="module-header">
+                            <h2 class="module-title">{{ translations["queue.title"] }}</h2>
+                            <span class="module-readout"><span id="queueCount">0</span></span>
+                        </div>
+                        <p class="empty-state" id="queueEmpty">{{ translations["queue.empty"] }}</p>
+                        <ul class="panel-list queue-list" id="queueList"></ul>
+                        <button type="button" class="utility-btn w-100 mt-3" id="clearQueueBtn" style="display: none;">{{ translations["queue.clear"] }}</button>
+                        <div class="control-switch">
+                            <input
+                                class="control-switch-input"
+                                type="checkbox"
+                                id="keepQueueToggle"
+                            >
+                            <label class="control-switch-label" for="keepQueueToggle">
+                                <span class="control-switch-track" aria-hidden="true">
+                                    <span class="control-switch-thumb"></span>
+                                </span>
+                                <span>{{ translations["queue.keep_after"] }}</span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="module">
+                        <div class="module-header">
+                            <h2 class="module-title">{{ translations["converted.title"] }}</h2>
+                            <span class="module-readout" id="convertedCount">0</span>
+                        </div>
+                        <p class="empty-state" id="convertedEmpty">{{ translations["converted.empty"] }}</p>
+                        <ul class="panel-list converted-list" id="convertedList"></ul>
+                        <button type="button" class="utility-btn w-100 mt-3" id="clearConvertedBtn" style="display: none;">{{ translations["converted.clear"] }}</button>
+                    </section>
+                </aside>
+
+                <main class="parameter-column" aria-label="{{ translations['parameters.title'] }}">
+                    <section class="module">
+                        <div class="module-header">
+                            <h2 class="module-title">{{ translations["parameters.title"] }}</h2>
+                            <span class="module-readout">{{ translations["parameters.readout"] }}</span>
+                        </div>
+                        <div id="layersContainer"></div>
+                        <div class="layer-actions">
+                            <button type="button" class="utility-btn fw-bold" id="addLayerBtn">{{ translations["layers.add"] }}</button>
+                            <button type="button" class="utility-btn fw-bold" id="removeLayerBtn">{{ translations["layers.remove"] }}</button>
+                        </div>
+                    </section>
+
+                    <section class="module">
+                        <div class="module-header">
+                            <h2 class="module-title">{{ translations["output.title"] }}</h2>
+                        </div>
+                        <div class="control-row">
+                            <label class="field-block mb-0" for="rate">
+                                <span class="field-label">{{ translations["output.sample_rate"] }}</span>
+                                <select class="form-select control-select" id="rate" name="rate">
+                                    <option value="44100">44100 Hz</option>
+                                    <option value="48000" selected>48000 Hz</option>
+                                    <option value="96000">96000 Hz</option>
+                                </select>
+                            </label>
+                        </div>
+                    </section>
+                </main>
+            </div>
+
+            <div class="action-rail">
+                <div class="status-cluster">
+                    <div class="queue-count-label">{{ translations["status.queue_ready"] }} <span id="queueCountAction">0</span></div>
+                    <div class="loading" role="status" aria-live="polite">
+                        <span class="spinner-border" aria-hidden="true"></span>
+                        <span id="processingStatus">{{ translations["status.generating_audio"] }}</span>
                     </div>
                 </div>
-
-                <div class="mb-4">
-                    <label class="form-label fw-bold" for="rate">{{ translations["output.sample_rate"] }}</label>
-                    <select class="form-select" id="rate" name="rate">
-                        <option value="44100">44100 Hz</option>
-                        <option value="48000" selected>48000 Hz</option>
-                        <option value="96000">96000 Hz</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn btn-primary" id="submitBtn">{{ translations["actions.synthesise_queue"] }} (<span id="queueCount">0</span>)</button>
+                <button type="submit" class="process-btn" id="submitBtn">{{ translations["actions.process_download"] }}</button>
             </div>
-        </div>
-    </form>
-
-    <div class="loading text-center">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2" id="processingStatus">{{ translations["status.generating_audio"] }}</p>
+        </form>
     </div>
 </div>
 
@@ -516,6 +1103,7 @@
     let dragStartIndex;
     let previewAudio = new Audio();
     let dragState = null;
+    let convertedFiles = [];
     const layers = Array.from({ length: maxLayers }, (_, index) => createDefaultLayer(index));
 
     const synthForm = document.getElementById('synthForm');
@@ -528,6 +1116,8 @@
     const clearQueueBtn = document.getElementById('clearQueueBtn');
     const keepQueueToggle = document.getElementById('keepQueueToggle');
     const queueCountSpan = document.getElementById('queueCount');
+    const queueCountAction = document.getElementById('queueCountAction');
+    const queueEmpty = document.getElementById('queueEmpty');
     const processingStatus = document.getElementById('processingStatus');
     const themeToggle = document.getElementById('themeToggle');
     const languageSelect = document.getElementById('languageSelect');
@@ -535,24 +1125,29 @@
     const addLayerBtn = document.getElementById('addLayerBtn');
     const removeLayerBtn = document.getElementById('removeLayerBtn');
     const rateSelect = document.getElementById('rate');
+    const convertedList = document.getElementById('convertedList');
+    const convertedEmpty = document.getElementById('convertedEmpty');
+    const convertedCount = document.getElementById('convertedCount');
+    const clearConvertedBtn = document.getElementById('clearConvertedBtn');
     const savedKeepQueuePreference = localStorage.getItem('keepQueueAfterSynth');
 
     document.title = t('meta.page_title');
     htmlElement.setAttribute('lang', CURRENT_LOCALE);
     languageSelect.value = CURRENT_LOCALE;
 
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    htmlElement.setAttribute('data-bs-theme', savedTheme);
-    updateThemeIcon(savedTheme);
+    htmlElement.setAttribute('data-bs-theme', 'dark');
+    updateThemeIcon('dark');
     keepQueueToggle.checked = savedKeepQueuePreference === 'true';
 
-    themeToggle.addEventListener('click', () => {
-        const currentTheme = htmlElement.getAttribute('data-bs-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        htmlElement.setAttribute('data-bs-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        updateThemeIcon(newTheme);
-    });
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+    }
 
     languageSelect.addEventListener('change', async () => {
         const selectedLocale = languageSelect.value;
@@ -584,7 +1179,11 @@
     });
 
     function updateThemeIcon(theme) {
-        themeToggle.textContent = theme === 'light' ? '🌞' : '🌛';
+        if (!themeToggle) {
+            return;
+        }
+
+        themeToggle.textContent = theme === 'light' ? 'Light' : 'Dark';
     }
 
     function supportsIndexedDb() {
@@ -790,6 +1389,18 @@
         );
     }
 
+    function formatFileSize(bytes) {
+        if (!Number.isFinite(bytes) || bytes <= 0) {
+            return '0 KB';
+        }
+
+        if (bytes < 1024 * 1024) {
+            return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+        }
+
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
     function renderQueue() {
         queueList.innerHTML = '';
         fileQueue.forEach((file, index) => {
@@ -797,15 +1408,97 @@
             li.className = 'queue-item';
             li.setAttribute('draggable', 'true');
             li.setAttribute('data-index', index);
-            li.innerHTML = `
-                <span class="text-truncate small">${file.name}</span>
-                <span class="remove-btn" onclick="removeFromQueue(${index})">✖</span>
-            `;
+
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'min-w-0';
+
+            const fileName = document.createElement('div');
+            fileName.className = 'file-name';
+            fileName.textContent = file.name;
+
+            const fileMeta = document.createElement('div');
+            fileMeta.className = 'file-meta';
+            fileMeta.textContent = formatFileSize(file.size);
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'remove-btn';
+            removeButton.textContent = 'x';
+            removeButton.setAttribute('aria-label', t('queue.remove_file', { filename: file.name }));
+            removeButton.addEventListener('click', () => window.removeFromQueue(index));
+
+            fileInfo.append(fileName, fileMeta);
+            li.append(fileInfo, removeButton);
             queueList.appendChild(li);
         });
         queueCountSpan.textContent = fileQueue.length;
+        queueCountAction.textContent = fileQueue.length;
+        queueEmpty.style.display = fileQueue.length > 0 ? 'none' : 'grid';
         clearQueueBtn.style.display = fileQueue.length > 0 ? 'block' : 'none';
         submitBtn.disabled = fileQueue.length === 0;
+    }
+
+    function renderConvertedFiles() {
+        convertedList.innerHTML = '';
+        convertedFiles.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.className = 'converted-item';
+
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'min-w-0';
+
+            const fileName = document.createElement('div');
+            fileName.className = 'file-name';
+            fileName.textContent = file.name;
+
+            const fileMeta = document.createElement('div');
+            fileMeta.className = 'file-meta';
+            fileMeta.textContent = `${formatFileSize(file.size)} / ${file.sourceName}`;
+
+            const downloadButton = document.createElement('button');
+            downloadButton.type = 'button';
+            downloadButton.className = 'download-btn';
+            downloadButton.textContent = t('converted.download');
+            downloadButton.addEventListener('click', () => downloadConvertedFile(index));
+
+            fileInfo.append(fileName, fileMeta);
+            li.append(fileInfo, downloadButton);
+            convertedList.appendChild(li);
+        });
+
+        convertedCount.textContent = convertedFiles.length;
+        convertedEmpty.style.display = convertedFiles.length > 0 ? 'none' : 'grid';
+        clearConvertedBtn.style.display = convertedFiles.length > 0 ? 'block' : 'none';
+    }
+
+    function downloadConvertedFile(index) {
+        const convertedFile = convertedFiles[index];
+        if (!convertedFile) {
+            return;
+        }
+
+        const anchor = document.createElement('a');
+        anchor.href = convertedFile.url;
+        anchor.download = convertedFile.name;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+    }
+
+    function addConvertedFile(downloadName, blob, sourceName) {
+        convertedFiles.unshift({
+            name: downloadName,
+            sourceName,
+            size: blob.size,
+            url: window.URL.createObjectURL(blob),
+        });
+        renderConvertedFiles();
+    }
+
+    function clearConvertedFiles() {
+        convertedFiles.forEach((file) => window.URL.revokeObjectURL(file.url));
+        convertedFiles = [];
+        renderConvertedFiles();
     }
 
     queueList.addEventListener('dragstart', (event) => {
@@ -862,6 +1555,10 @@
         renderQueue();
         fileInput.value = '';
     });
+
+    clearConvertedBtn.addEventListener('click', clearConvertedFiles);
+
+    window.addEventListener('beforeunload', clearConvertedFiles);
 
     dropZone.addEventListener('dragover', (event) => {
         event.preventDefault();
@@ -1034,6 +1731,21 @@
         `;
     }
 
+    function faderFillPercent(value, min, max) {
+        const ratio = (Number(value) - min) / (max - min);
+        return `${clamp(ratio * 100, 0, 100).toFixed(2)}%`;
+    }
+
+    function updateFaderFill(input) {
+        if (!input) {
+            return;
+        }
+
+        const min = Number(input.min);
+        const max = Number(input.max);
+        input.style.setProperty('--fill', faderFillPercent(input.value, min, max));
+    }
+
     function renderLayers() {
         layersContainer.innerHTML = '';
 
@@ -1045,12 +1757,12 @@
                 && layer.selectedPointIndex < layer.frequencyCurve.length - 1;
 
             const card = document.createElement('div');
-            card.className = 'layer-card mb-3 p-3 rounded';
+            card.className = 'layer-card';
             card.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="layer-title-row">
                     <div>
-                        <div class="fw-bold">${t('layer.title', { index: layerIndex + 1 })}</div>
-                        <div class="text-muted small">${layer.curveEnabled ? t('layer.curve_active') : t('layer.curve_flat')}</div>
+                        <div class="layer-title">${t('layer.title', { index: layerIndex + 1 })}</div>
+                        <div class="layer-state">${layer.curveEnabled ? t('layer.curve_active') : t('layer.curve_flat')}</div>
                     </div>
                     <button
                         type="button"
@@ -1058,50 +1770,69 @@
                         onclick="playPreview(${layerIndex})"
                         title="${t('layer.play_preview')}"
                         aria-label="${t('layer.play_preview')}"
-                    >▶</button>
+                    >&gt;</button>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label small">${t('layer.waveform_type')}</label>
-                    <div class="wave-type-group">
-                        <select class="form-select form-select-sm" onchange="updateLayerType(${layerIndex}, this.value)">
-                            ${createWaveOptions(layer.type)}
-                        </select>
+                <div class="field-block">
+                    <label class="field-label" for="waveType${layerIndex}">${t('layer.waveform_type')}</label>
+                    <select
+                        class="form-select control-select"
+                        id="waveType${layerIndex}"
+                        onchange="updateLayerType(${layerIndex}, this.value)"
+                    >
+                        ${createWaveOptions(layer.type)}
+                    </select>
+                </div>
+                <div class="field-block" style="display: ${layer.type === 'pulse' ? 'grid' : 'none'};">
+                    <label class="fader-label" for="dutyFader${layerIndex}">
+                        <span>${t('layer.pulse_width')}</span>
+                        <span class="readout" id="dutyValue${layerIndex}">${layer.duty.toFixed(2)}</span>
+                    </label>
+                    <div class="fader-shell">
+                        <input
+                            type="range"
+                            class="fader-input"
+                            id="dutyFader${layerIndex}"
+                            min="0.01"
+                            max="0.99"
+                            step="0.01"
+                            value="${layer.duty}"
+                            style="--fill: ${faderFillPercent(layer.duty, 0.01, 0.99)}"
+                            oninput="updateLayerDuty(${layerIndex}, this.value, this)"
+                        >
                     </div>
                 </div>
-                <div class="mb-3" style="display: ${layer.type === 'pulse' ? 'block' : 'none'};">
-                    <label class="form-label small">${t('layer.pulse_width')}: <span id="dutyValue${layerIndex}">${layer.duty.toFixed(2)}</span></label>
-                    <input
-                        type="range"
-                        class="form-range"
-                        min="0.01"
-                        max="0.99"
-                        step="0.01"
-                        value="${layer.duty}"
-                        oninput="updateLayerDuty(${layerIndex}, this.value)"
-                    >
+                <div class="field-block">
+                    <label class="fader-label" for="volumeFader${layerIndex}">
+                        <span>${t('layer.base_volume')}</span>
+                        <span class="readout" id="volumeValue${layerIndex}">${layer.volume.toFixed(1)}</span>
+                    </label>
+                    <div class="fader-shell">
+                        <input
+                            type="range"
+                            class="fader-input"
+                            id="volumeFader${layerIndex}"
+                            min="0.0"
+                            max="2.0"
+                            step="0.1"
+                            value="${layer.volume}"
+                            style="--fill: ${faderFillPercent(layer.volume, 0.0, 2.0)}"
+                            oninput="updateLayerVolume(${layerIndex}, this.value, this)"
+                        >
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label small">${t('layer.base_volume')}: <span id="volumeValue${layerIndex}">${layer.volume.toFixed(1)}</span></label>
+                <div class="control-switch">
                     <input
-                        type="range"
-                        class="form-range"
-                        min="0.0"
-                        max="2.0"
-                        step="0.1"
-                        value="${layer.volume}"
-                        oninput="updateLayerVolume(${layerIndex}, this.value)"
-                    >
-                </div>
-                <div class="form-check form-switch mb-2">
-                    <input
-                        class="form-check-input"
+                        class="control-switch-input"
                         type="checkbox"
                         id="curveToggle${layerIndex}"
                         ${layer.curveEnabled ? 'checked' : ''}
                         onchange="toggleCurveEnabled(${layerIndex}, this.checked)"
                     >
-                    <label class="form-check-label small" for="curveToggle${layerIndex}">
-                        ${t('layer.enable_curve')}
+                    <label class="control-switch-label" for="curveToggle${layerIndex}">
+                        <span class="control-switch-track" aria-hidden="true">
+                            <span class="control-switch-thumb"></span>
+                        </span>
+                        <span>${t('layer.enable_curve')}</span>
                     </label>
                 </div>
                 ${layer.curveEnabled ? `
@@ -1109,7 +1840,7 @@
                         <div class="curve-toolbar">
                             <button
                                 type="button"
-                                class="btn btn-sm btn-outline-primary"
+                                class="utility-btn"
                                 onclick="addCurvePoint(${layerIndex})"
                                 ${layer.frequencyCurve.length >= MAX_CURVE_POINTS ? 'disabled' : ''}
                             >
@@ -1117,7 +1848,7 @@
                             </button>
                             <button
                                 type="button"
-                                class="btn btn-sm btn-outline-secondary"
+                                class="utility-btn"
                                 onclick="removeSelectedPoint(${layerIndex})"
                                 ${canRemoveSelected ? '' : 'disabled'}
                             >
@@ -1125,7 +1856,7 @@
                             </button>
                             <button
                                 type="button"
-                                class="btn btn-sm btn-outline-secondary"
+                                class="utility-btn"
                                 onclick="resetCurve(${layerIndex})"
                             >
                                 ${t('curve.reset')}
@@ -1153,7 +1884,8 @@
 
     function updateLayerButtons() {
         addLayerBtn.disabled = layerCount === maxLayers;
-        removeLayerBtn.style.display = layerCount === 1 ? 'none' : 'block';
+        removeLayerBtn.disabled = layerCount === 1;
+        removeLayerBtn.style.display = 'inline-flex';
     }
 
     function activeLayersPayload() {
@@ -1175,22 +1907,24 @@
         renderLayers();
     }
 
-    function updateLayerDuty(layerIndex, value) {
+    function updateLayerDuty(layerIndex, value, input = null) {
         const duty = parseFloat(value);
         layers[layerIndex].duty = duty;
         const dutyValue = document.getElementById(`dutyValue${layerIndex}`);
         if (dutyValue) {
             dutyValue.textContent = duty.toFixed(2);
         }
+        updateFaderFill(input || document.getElementById(`dutyFader${layerIndex}`));
     }
 
-    function updateLayerVolume(layerIndex, value) {
+    function updateLayerVolume(layerIndex, value, input = null) {
         const volume = parseFloat(value);
         layers[layerIndex].volume = volume;
         const volumeValue = document.getElementById(`volumeValue${layerIndex}`);
         if (volumeValue) {
             volumeValue.textContent = volume.toFixed(1);
         }
+        updateFaderFill(input || document.getElementById(`volumeFader${layerIndex}`));
     }
 
     function toggleCurveEnabled(layerIndex, enabled) {
@@ -1295,6 +2029,13 @@
     addLayerBtn.addEventListener('click', window.addLayer);
     removeLayerBtn.addEventListener('click', window.removeLayer);
 
+    layersContainer.addEventListener('pointerdown', (event) => {
+        const fader = event.target.closest('.fader-input');
+        if (fader) {
+            fader.classList.add('is-dragging');
+        }
+    });
+
     window.addEventListener('pointermove', (event) => {
         if (!dragState) return;
 
@@ -1325,6 +2066,9 @@
 
     window.addEventListener('pointerup', () => {
         dragState = null;
+        document.querySelectorAll('.fader-input.is-dragging').forEach((fader) => {
+            fader.classList.remove('is-dragging');
+        });
     });
 
     function extractDownloadName(response, fallbackName) {
@@ -1337,7 +2081,7 @@
 
     synthForm.onsubmit = async (event) => {
         event.preventDefault();
-        loading.style.display = 'block';
+        loading.classList.add('is-visible');
         submitBtn.disabled = true;
 
         const filesToProcess = [...fileQueue];
@@ -1372,22 +2116,16 @@
                 }
 
                 const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
                 const downloadName = extractDownloadName(response, `${file.name.replace(/\.[^.]+$/, '') || 'output'}.wav`);
-                const anchor = document.createElement('a');
-                anchor.href = url;
-                anchor.download = downloadName;
-                document.body.appendChild(anchor);
-                anchor.click();
-                document.body.removeChild(anchor);
-                window.URL.revokeObjectURL(url);
+                addConvertedFile(downloadName, blob, file.name);
+                downloadConvertedFile(0);
             } catch (error) {
                 failedFiles.push(file);
                 alert(t('alerts.processing_unknown', { filename: file.name }));
             }
         }
 
-        loading.style.display = 'none';
+        loading.classList.remove('is-visible');
         submitBtn.disabled = false;
         processingStatus.textContent = t('status.generating_audio');
         if (!keepQueueToggle.checked) {
@@ -1404,6 +2142,7 @@
             console.warn('Failed to restore page state after language change.', error);
         }
         renderQueue();
+        renderConvertedFiles();
         renderLayers();
     }
 

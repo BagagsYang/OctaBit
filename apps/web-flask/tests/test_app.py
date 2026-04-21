@@ -23,7 +23,8 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertIn('<html lang="en"', response.get_data(as_text=True))
-        self.assertIn("MIDI Queue", response.get_data(as_text=True))
+        self.assertIn("MIDI-8BIT CONVERTER", response.get_data(as_text=True))
+        self.assertIn("Current File(s)", response.get_data(as_text=True))
 
     def test_index_uses_browser_language_for_french(self):
         response = self.client.get("/", headers={"Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8"})
@@ -32,8 +33,8 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         body = response.get_data(as_text=True)
         self.assertIn('<html lang="fr"', body)
-        self.assertIn("File MIDI", body)
-        self.assertIn("Synthétiser la file", body)
+        self.assertIn("Fichier(s) actuel(s)", body)
+        self.assertIn("Traiter et télécharger", body)
         self.assertIn('value="fr" selected', body)
         self.assertIn("Français", body)
 
@@ -44,7 +45,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         body = response.get_data(as_text=True)
         self.assertIn('<html lang="zh-CN"', body)
-        self.assertIn("MIDI 队列", body)
+        self.assertIn("当前文件", body)
         self.assertIn("采样率", body)
 
     def test_index_query_parameter_overrides_browser_language(self):
@@ -52,8 +53,19 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.addCleanup(response.close)
 
         self.assertEqual(200, response.status_code)
-        self.assertIn("File MIDI", response.get_data(as_text=True))
+        self.assertIn("Fichier(s) actuel(s)", response.get_data(as_text=True))
         self.assertIn("web_locale=fr", response.headers.get("Set-Cookie", ""))
+
+    def test_index_renders_control_panel_without_theme_toggle(self):
+        response = self.client.get("/")
+        self.addCleanup(response.close)
+
+        body = response.get_data(as_text=True)
+        self.assertIn("MIDI-8BIT CONVERTER", body)
+        self.assertIn("Converted Files", body)
+        self.assertIn('id="convertedList"', body)
+        self.assertIn("Process &amp; Download", body)
+        self.assertNotIn('id="themeToggle"', body)
 
     def test_index_includes_language_switch_state_preservation_script(self):
         response = self.client.get("/")
