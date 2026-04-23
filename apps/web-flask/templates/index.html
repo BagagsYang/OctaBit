@@ -508,6 +508,15 @@
             transform: translateY(1px);
         }
 
+        .play-icon {
+            width: 0;
+            height: 0;
+            margin-left: 2px;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-left: 11px solid currentColor;
+        }
+
         .field-block {
             display: grid;
             gap: 8px;
@@ -785,15 +794,20 @@
             display: inline-flex;
             align-items: center;
             gap: 12px;
+            max-width: 100%;
             color: var(--muted-text);
             cursor: pointer;
             font-size: 0.92rem;
             font-weight: 700;
+            line-height: 1.18;
         }
 
         .control-switch-track {
+            box-sizing: border-box;
             width: 64px;
+            min-width: 64px;
             height: 32px;
+            flex: 0 0 64px;
             display: inline-flex;
             align-items: center;
             padding: 3px;
@@ -809,7 +823,9 @@
         }
 
         .control-switch-thumb {
+            box-sizing: border-box;
             width: 24px;
+            flex: 0 0 24px;
             height: 24px;
             border-radius: 6px;
             background:
@@ -821,6 +837,11 @@
                 0 2px 7px rgba(0, 0, 0, 0.42);
             transform: translateX(0);
             transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .control-switch-text {
+            min-width: 0;
+            overflow-wrap: anywhere;
         }
 
         .control-switch-input:checked + .control-switch-label .control-switch-track {
@@ -1179,7 +1200,7 @@
                                 <span class="control-switch-track" aria-hidden="true">
                                     <span class="control-switch-thumb"></span>
                                 </span>
-                                <span>{{ translations["queue.keep_after"] }}</span>
+                                <span class="control-switch-text">{{ translations["queue.keep_after"] }}</span>
                             </label>
                         </div>
                     </section>
@@ -1251,6 +1272,7 @@
     const LANGUAGE_SWITCH_STATE_DB_NAME = 'midi8bitWebState';
     const LANGUAGE_SWITCH_STATE_STORE_NAME = 'pageState';
     const LANGUAGE_SWITCH_STATE_RECORD_KEY = 'pending-language-switch';
+    const CONTROL_SWITCH_TRANSITION_MS = 200;
     const MIN_CURVE_FREQUENCY_HZ = 8.175798915643707;
     const MAX_CURVE_FREQUENCY_HZ = 12543.853951415975;
     const MIN_CURVE_GAIN_DB = -36.0;
@@ -1303,6 +1325,7 @@
     let dragStartIndex;
     let previewAudio = new Audio();
     let dragState = null;
+    let layerRenderTimer = null;
     let convertedFiles = [];
     const layers = Array.from({ length: maxLayers }, (_, index) => createDefaultLayer(index));
 
@@ -2005,7 +2028,7 @@
                         onclick="playPreview(${layerIndex})"
                         title="${t('layer.play_preview')}"
                         aria-label="${t('layer.play_preview')}"
-                    >&gt;</button>
+                    ><span class="play-icon" aria-hidden="true"></span></button>
                 </div>
                 <div class="field-block">
                     <label class="field-label" for="waveType${layerIndex}">${t('layer.waveform_type')}</label>
@@ -2105,7 +2128,7 @@
                         <span class="control-switch-track" aria-hidden="true">
                             <span class="control-switch-thumb"></span>
                         </span>
-                        <span>${t('layer.enable_curve')}</span>
+                        <span class="control-switch-text">${t('layer.enable_curve')}</span>
                     </label>
                 </div>
                 ${layer.curveEnabled ? `
@@ -2221,7 +2244,11 @@
             layer.frequencyCurve = createDefaultCurve();
             layer.selectedPointIndex = 0;
         }
-        renderLayers();
+        window.clearTimeout(layerRenderTimer);
+        layerRenderTimer = window.setTimeout(() => {
+            layerRenderTimer = null;
+            renderLayers();
+        }, CONTROL_SWITCH_TRANSITION_MS);
     }
 
     function selectCurvePoint(layerIndex, pointIndex) {
