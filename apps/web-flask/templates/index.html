@@ -313,6 +313,39 @@
 
         .queue-item {
             cursor: grab;
+            position: relative;
+        }
+
+        .queue-item::after {
+            content: attr(data-full-name);
+            position: absolute;
+            z-index: 4;
+            top: 7px;
+            left: 10px;
+            right: 52px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            color: var(--text-color);
+            background: rgba(18, 18, 17, 0.96);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
+            font-size: 0.82rem;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transition:
+                opacity 0.12s ease,
+                visibility 0s linear 0.12s;
+            white-space: normal;
+        }
+
+        .queue-item:hover::after,
+        .queue-item:focus-within::after {
+            opacity: 1;
+            visibility: visible;
+            transition-delay: 0.5s, 0.5s;
         }
 
         .queue-item.dragging {
@@ -1575,6 +1608,7 @@
             li.className = 'queue-item';
             li.setAttribute('draggable', 'true');
             li.setAttribute('data-index', index);
+            li.setAttribute('data-full-name', file.name);
 
             const fileInfo = document.createElement('div');
             fileInfo.className = 'min-w-0';
