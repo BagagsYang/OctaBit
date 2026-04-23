@@ -1273,6 +1273,7 @@
     const LANGUAGE_SWITCH_STATE_STORE_NAME = 'pageState';
     const LANGUAGE_SWITCH_STATE_RECORD_KEY = 'pending-language-switch';
     const CONTROL_SWITCH_TRANSITION_MS = 200;
+    const PREVIEW_VOLUME = 0.5;
     const MIN_CURVE_FREQUENCY_HZ = 8.175798915643707;
     const MAX_CURVE_FREQUENCY_HZ = 12543.853951415975;
     const MIN_CURVE_GAIN_DB = -36.0;
@@ -1324,6 +1325,7 @@
     let layerCount = 1;
     let dragStartIndex;
     let previewAudio = new Audio();
+    previewAudio.volume = PREVIEW_VOLUME;
     let dragState = null;
     let layerRenderTimer = null;
     let convertedFiles = [];
