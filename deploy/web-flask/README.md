@@ -1,5 +1,7 @@
 # Flask Web Docker Deployment
 
+Language/语言: English | [简体中文](./README.zh-CN.md)
+
 This deployment is for the browser-based Flask app only. The image includes `apps/web-flask/`, the shared renderer entrypoint in `core/python-renderer/`, the shared preview WAV files in `assets/previews/`, and the project licence. It does not package the macOS or Windows desktop apps.
 
 The compose file binds the container to `127.0.0.1:8000` on the server so the first deployment can be tested through SSH tunnelling before any public reverse proxy is added.
