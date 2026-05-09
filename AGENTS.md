@@ -16,12 +16,25 @@ Run commands from the repository root unless noted otherwise.
 python3 -m venv .venv
 ```
 
+On Windows:
+
+```powershell
+py -3 -m venv .venv
+```
+
 Install only the dependencies needed for the area you are touching:
 
 ```bash
 ./.venv/bin/python3 -m pip install -r apps/web-flask/requirements.txt
 ./.venv/bin/python3 -m pip install -r apps/macos/requirements-build.txt
 ./.venv/bin/python3 -m pip install -r core/python-renderer/requirements.txt
+```
+
+On Windows, use the virtual environment's Python executable:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r apps\web-flask\requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r core\python-renderer\requirements.txt
 ```
 
 ## Workflows and commands
@@ -43,7 +56,8 @@ Install only the dependencies needed for the area you are touching:
 - TODO: Add a command-line `xcodebuild` workflow after it is verified in repo usage.
 
 ### Windows
-- Preflight: `dotnet --info`, `python --version`, `python -c "import pretty_midi, numpy, scipy"`
+- Preflight: `dotnet --info`, `py -3 --version`, `py -3 -c "import pretty_midi, numpy, scipy"`; if `py -3` is unavailable, use `python --version` and `python -c "import pretty_midi, numpy, scipy"` instead.
+- Reference renderer dependencies for parity tests: `py -3 -m pip install -r core/python-renderer/requirements.txt`; if `py -3` is unavailable, use `python -m pip install -r core/python-renderer/requirements.txt`.
 - Restore: `dotnet restore apps/windows/Midi8BitSynthesiser.sln`
 - Build: `dotnet build apps/windows/Midi8BitSynthesiser.sln -c Release -p:Platform=x64`
 - Test: `dotnet test apps/windows/Midi8BitSynthesiser.sln -c Release -p:Platform=x64 --no-build`
