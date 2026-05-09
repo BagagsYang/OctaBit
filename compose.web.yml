@@ -1,0 +1,15 @@
+services:
+  web-flask:
+    build:
+      context: .
+      dockerfile: deploy/web-flask/Dockerfile
+    image: midi8bit-web-flask:latest
+    restart: unless-stopped
+    environment:
+      PORT: "8000"
+      WEB_CONCURRENCY: "2"
+      GUNICORN_TIMEOUT: "120"
+    ports:
+      - "127.0.0.1:8000:8000"
+    tmpfs:
+      - /tmp:size=256m,mode=1777

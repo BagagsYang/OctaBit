@@ -56,8 +56,15 @@ else:
     )
 
 
-def open_browser():
-    webbrowser.open_new("http://127.0.0.1:5002")
+def open_browser(port=5002):
+    webbrowser.open_new(f"http://127.0.0.1:{port}")
+
+
+def _get_server_port(default=5002):
+    try:
+        return int(os.environ.get("PORT", default))
+    except ValueError:
+        return default
 
 
 def _normalise_locale(raw_locale):
@@ -220,6 +227,12 @@ def synthesise():
 
 
 if __name__ == "__main__":
-    Timer(1, open_browser).start()
-    print("DEBUG: SERVER RUNNING ON PORT 5002")
-    app.run(host="127.0.0.1", port=5002, debug=False)
+    server_host = os.environ.get("HOST", "127.0.0.1")
+    server_port = _get_server_port()
+    should_open_browser = os.environ.get("WEB_FLASK_OPEN_BROWSER", "1") != "0"
+
+    if should_open_browser and server_host in ("127.0.0.1", "localhost"):
+        Timer(1, lambda: open_browser(server_port)).start()
+
+    print(f"DEBUG: SERVER RUNNING ON {server_host}:{server_port}")
+    app.run(host=server_host, port=server_port, debug=False)
