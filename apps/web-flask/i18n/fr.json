@@ -2,6 +2,7 @@
   "meta.page_title": "MIDI-8BIT CONVERTER",
   "meta.subtitle": "Déposez un fichier MIDI, réglez les couches, exportez l'audio 8-bit.",
   "toolbar.toggle_theme": "Basculer le mode clair/sombre",
+  "toolbar.settings": "Paramètres",
   "toolbar.language_title": "Langue",
   "toolbar.language_option.en": "English",
   "toolbar.language_option.fr": "Français",

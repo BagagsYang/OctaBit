@@ -83,6 +83,8 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("MIDI-8BIT CONVERTER", body)
         self.assertIn("Converted Files", body)
         self.assertIn('id="convertedList"', body)
+        self.assertIn('id="settingsPlaceholderBtn"', body)
+        self.assertIn('aria-label="Settings"', body)
         self.assertIn("Process &amp; Download", body)
         self.assertIn(
             "Clearing converted files deletes the temporary WAV files from the server, "

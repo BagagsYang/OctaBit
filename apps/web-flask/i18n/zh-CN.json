@@ -2,6 +2,7 @@
   "meta.page_title": "MIDI-8BIT CONVERTER",
   "meta.subtitle": "拖入 MIDI 文件，调节波形层，然后导出 8-bit 音频。",
   "toolbar.toggle_theme": "切换浅色/深色模式",
+  "toolbar.settings": "设置",
   "toolbar.language_title": "语言",
   "toolbar.language_option.en": "English",
   "toolbar.language_option.fr": "Français",

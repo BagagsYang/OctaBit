@@ -2,6 +2,7 @@
   "meta.page_title": "MIDI-8BIT CONVERTER",
   "meta.subtitle": "Drop a MIDI file, tune the layers, export 8-bit audio.",
   "toolbar.toggle_theme": "Toggle Light/Dark Mode",
+  "toolbar.settings": "Settings",
   "toolbar.language_title": "Language",
   "toolbar.language_option.en": "English",
   "toolbar.language_option.fr": "Français",
