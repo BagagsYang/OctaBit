@@ -58,6 +58,14 @@ apps\web-flask\Launch_Synthesiser.bat
 
 浏览器 UI 在 JavaScript 中保存层状态，并将其序列化到 `layers_json` 中。
 
+在服务器部署中，浏览器 UI 使用渲染任务接口，而不是等待单个请求同时完成上传、渲染和下载：
+
+- `POST /synthesise/jobs`：接受相同表单字段并返回任务 id。
+- `GET /synthesise/jobs/<job_id>`：报告 queued、rendering、ready、failed 或 expired 状态。
+- `GET /synthesise/jobs/<job_id>/download`：下载已准备好的 WAV 文件。
+
+已准备好的任务文件是临时文件，会在 `WEB_DOWNLOAD_TTL_SECONDS` 后过期；默认值为 1800 秒。
+
 ## 输出命名
 
 - 单个可听层且无曲线：`<original>_<wave>.wav`

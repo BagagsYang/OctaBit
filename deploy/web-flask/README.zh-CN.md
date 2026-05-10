@@ -57,6 +57,8 @@ docker compose -f compose.web.yml down
 ## 生产部署说明
 
 - 容器会以非 root 用户运行 Gunicorn，并监听 `0.0.0.0:${PORT:-8000}`。
-- 上传的 MIDI 文件和生成的 WAV 文件都是 `/tmp` 下的临时文件；Compose 文件把 `/tmp` 挂载为内存 tmpfs，不会持久化上传数据。
+- `compose.web.yml` 将 Gunicorn 超时时间配置为 600 秒。这样慢速 SSH 隧道下载有更长时间完成，但浏览器仍会在服务器完成渲染后再下载生成的 WAV。
+- 上传的 MIDI 文件、生成的 WAV 文件和短期渲染任务元数据都是 `/tmp` 下的临时文件；Compose 文件把 `/tmp` 挂载为内存 tmpfs，不会持久化上传数据。
+- 已准备好的渲染任务会保留 `WEB_DOWNLOAD_TTL_SECONDS` 秒，默认 1800 秒，因此用户遇到 WAV 下载超时时可以重试下载而不必重新渲染。
 - 主机端口有意绑定到 `127.0.0.1:8000`，用于仅通过隧道访问的测试阶段。
 - 后续公开部署时，应在此服务前放置 Caddy 或 Nginx，并只公开 80 和 443 端口。Flask/Gunicorn 服务应保持为服务器本机或 Docker 网络内的私有服务。

@@ -1717,12 +1717,28 @@
             sourceName,
             size: blob.size,
             url: window.URL.createObjectURL(blob),
+            objectUrl: true,
+        });
+        renderConvertedFiles();
+    }
+
+    function addConvertedServerFile(downloadName, size, sourceName, downloadUrl) {
+        convertedFiles.unshift({
+            name: downloadName,
+            sourceName,
+            size,
+            url: downloadUrl,
+            objectUrl: false,
         });
         renderConvertedFiles();
     }
 
     function clearConvertedFiles() {
-        convertedFiles.forEach((file) => window.URL.revokeObjectURL(file.url));
+        convertedFiles.forEach((file) => {
+            if (file.objectUrl) {
+                window.URL.revokeObjectURL(file.url);
+            }
+        });
         convertedFiles = [];
         renderConvertedFiles();
     }
@@ -2395,6 +2411,48 @@
         return plainMatch ? plainMatch[1] : fallbackName;
     }
 
+    function sleep(ms) {
+        return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    async function readJsonResponse(response) {
+        try {
+            return await response.json();
+        } catch (error) {
+            return {};
+        }
+    }
+
+    async function waitForSynthesiseJob(jobId, file, index, total) {
+        while (true) {
+            const response = await fetch(`/synthesise/jobs/${jobId}`);
+            const payload = await readJsonResponse(response);
+            if (!response.ok && !['ready', 'failed', 'expired'].includes(payload.status)) {
+                throw new Error(payload.error || response.statusText);
+            }
+
+            if (payload.status === 'ready') {
+                processingStatus.textContent = t('status.file_ready', {
+                    current: index + 1,
+                    total,
+                    filename: file.name,
+                });
+                return payload;
+            }
+
+            if (payload.status === 'failed' || payload.status === 'expired') {
+                throw new Error(payload.error || payload.status);
+            }
+
+            processingStatus.textContent = t('status.rendering_file', {
+                current: index + 1,
+                total,
+                filename: file.name,
+            });
+            await sleep(1000);
+        }
+    }
+
     synthForm.onsubmit = async (event) => {
         event.preventDefault();
         loading.classList.add('is-visible');
@@ -2417,27 +2475,46 @@
             formData.append('midi_file', file);
 
             try {
-                const response = await fetch('/synthesise', {
+                const response = await fetch('/synthesise/jobs', {
                     method: 'POST',
                     body: formData,
                 });
                 if (!response.ok) {
-                    const errorPayload = await response.json();
+                    const errorPayload = await readJsonResponse(response);
                     failedFiles.push(file);
                     alert(t('alerts.processing_error', {
                         filename: file.name,
-                        error: errorPayload.error,
+                        error: errorPayload.error || response.statusText,
                     }));
                     continue;
                 }
 
-                const blob = await response.blob();
-                const downloadName = extractDownloadName(response, `${file.name.replace(/\.[^.]+$/, '') || 'output'}.wav`);
-                addConvertedFile(downloadName, blob, file.name);
+                const job = await readJsonResponse(response);
+                if (!job.job_id) {
+                    throw new Error(job.error || response.statusText);
+                }
+                const readyJob = job.status === 'ready'
+                    ? job
+                    : await waitForSynthesiseJob(job.job_id, file, index, filesToProcess.length);
+                const downloadUrl = new URL(readyJob.download_url, window.location.origin).toString();
+                addConvertedServerFile(
+                    readyJob.download_name || `${file.name.replace(/\.[^.]+$/, '') || 'output'}.wav`,
+                    readyJob.size_bytes || 0,
+                    file.name,
+                    downloadUrl,
+                );
+                processingStatus.textContent = t('status.downloading_file', {
+                    current: index + 1,
+                    total: filesToProcess.length,
+                    filename: file.name,
+                });
                 downloadConvertedFile(0);
             } catch (error) {
                 failedFiles.push(file);
-                alert(t('alerts.processing_unknown', { filename: file.name }));
+                alert(t('alerts.processing_error', {
+                    filename: file.name,
+                    error: error.message || t('alerts.processing_unknown', { filename: file.name }),
+                }));
             }
         }
 

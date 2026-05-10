@@ -58,6 +58,16 @@ Each layer object contains:
 
 The browser UI stores layer state in JavaScript and serialises it into `layers_json`.
 
+For server deployments, the browser UI uses the render job endpoints instead of
+waiting for a single request to upload, render, and download:
+
+- `POST /synthesise/jobs`: accepts the same form fields and returns a job id.
+- `GET /synthesise/jobs/<job_id>`: reports queued, rendering, ready, failed, or expired status.
+- `GET /synthesise/jobs/<job_id>/download`: downloads the ready WAV file.
+
+Ready job files are temporary and expire after `WEB_DOWNLOAD_TTL_SECONDS`, which
+defaults to 1800 seconds.
+
 ## Output naming
 
 - Single audible layer without a curve: `<original>_<wave>.wav`

@@ -2,6 +2,7 @@ import io
 import json
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -15,7 +16,25 @@ import app as web_app
 class WebFlaskSynthesiseTests(unittest.TestCase):
     def setUp(self):
         web_app.app.testing = True
+        self._original_job_config = {
+            "SYNTHESISE_JOB_ROOT": web_app.app.config.get("SYNTHESISE_JOB_ROOT"),
+            "SYNTHESISE_JOBS_INLINE": web_app.app.config.get("SYNTHESISE_JOBS_INLINE"),
+            "WEB_DOWNLOAD_TTL_SECONDS": web_app.app.config.get("WEB_DOWNLOAD_TTL_SECONDS"),
+        }
+        self.job_root = tempfile.TemporaryDirectory()
+        self.addCleanup(self.job_root.cleanup)
+        self.addCleanup(self._restore_job_config)
+        web_app.app.config["SYNTHESISE_JOB_ROOT"] = self.job_root.name
+        web_app.app.config["SYNTHESISE_JOBS_INLINE"] = True
+        web_app.app.config["WEB_DOWNLOAD_TTL_SECONDS"] = 1800
         self.client = web_app.app.test_client()
+
+    def _restore_job_config(self):
+        for key, value in self._original_job_config.items():
+            if value is None:
+                web_app.app.config.pop(key, None)
+            else:
+                web_app.app.config[key] = value
 
     def test_index_falls_back_to_english(self):
         response = self.client.get("/", headers={"Accept-Language": "de-DE,de;q=0.9"})
@@ -133,6 +152,103 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(b"RIFF", response.data[:4])
         self.assertIn("attachment;", response.headers["Content-Disposition"])
         self.assertIn("lead_sine.wav", response.headers["Content-Disposition"])
+
+    def test_synthesise_job_returns_ready_status_and_download(self):
+        response = self.client.post(
+            "/synthesise/jobs",
+            data={
+                "rate": "16000",
+                "layers_json": json.dumps([{
+                    "type": "sine",
+                    "duty": 0.5,
+                    "volume": 1.0,
+                    "frequency_curve": [],
+                }]),
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(202, response.status_code)
+        payload = response.get_json()
+        self.assertEqual("ready", payload["status"])
+        self.assertEqual("lead_sine.wav", payload["download_name"])
+        self.assertGreater(payload["size_bytes"], 4)
+        self.assertIn("/synthesise/jobs/", payload["download_url"])
+
+        status_response = self.client.get(f"/synthesise/jobs/{payload['job_id']}")
+        self.addCleanup(status_response.close)
+        self.assertEqual(200, status_response.status_code)
+        self.assertEqual("ready", status_response.get_json()["status"])
+
+        download_response = self.client.get(payload["download_url"])
+        self.addCleanup(download_response.close)
+        self.assertEqual(200, download_response.status_code)
+        self.assertEqual(b"RIFF", download_response.data[:4])
+        self.assertIn("attachment;", download_response.headers["Content-Disposition"])
+        self.assertIn("lead_sine.wav", download_response.headers["Content-Disposition"])
+
+    def test_synthesise_job_reports_failed_status(self):
+        response = self.client.post(
+            "/synthesise/jobs",
+            data={
+                "rate": "16000",
+                "layers_json": json.dumps([{
+                    "type": "sine",
+                    "duty": 0.5,
+                    "volume": 1.0,
+                    "frequency_curve": [
+                        {"frequency_hz": 440.0, "gain_db": 0.0},
+                        {"frequency_hz": 440.0, "gain_db": -6.0},
+                    ],
+                }]),
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(202, response.status_code)
+        payload = response.get_json()
+        self.assertEqual("failed", payload["status"])
+        self.assertIn("strictly increasing", payload["error"])
+
+        download_response = self.client.get(f"/synthesise/jobs/{payload['job_id']}/download")
+        self.addCleanup(download_response.close)
+        self.assertEqual(400, download_response.status_code)
+        self.assertEqual("failed", download_response.get_json()["status"])
+
+    def test_synthesise_job_missing_or_expired_returns_expired(self):
+        missing_response = self.client.get(f"/synthesise/jobs/{'0' * 32}")
+        self.addCleanup(missing_response.close)
+        self.assertEqual(410, missing_response.status_code)
+        self.assertEqual("expired", missing_response.get_json()["status"])
+
+        response = self.client.post(
+            "/synthesise/jobs",
+            data={
+                "rate": "16000",
+                "layers_json": json.dumps([{
+                    "type": "sine",
+                    "duty": 0.5,
+                    "volume": 1.0,
+                    "frequency_curve": [],
+                }]),
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+        payload = response.get_json()
+        metadata = web_app._read_job_metadata(payload["job_id"])
+        metadata["expires_at"] = time.time() - 1
+        web_app._write_job_metadata(payload["job_id"], metadata)
+
+        expired_response = self.client.get(f"/synthesise/jobs/{payload['job_id']}")
+        self.addCleanup(expired_response.close)
+        self.assertEqual(410, expired_response.status_code)
+        self.assertEqual("expired", expired_response.get_json()["status"])
 
     def test_synthesise_rejects_invalid_curve_payload(self):
         response = self.client.post(

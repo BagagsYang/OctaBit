@@ -1,10 +1,13 @@
 import json
 import os
+import shutil
 import sys
 import tempfile
+import time
+import uuid
 import webbrowser
 from functools import lru_cache
-from threading import Timer
+from threading import Thread, Timer
 
 from flask import (
     Flask,
@@ -31,6 +34,8 @@ SUPPORTED_LOCALE_LOOKUP = {
 LANGUAGE_FALLBACKS = {
     "zh": "zh-CN",
 }
+DEFAULT_DOWNLOAD_TTL_SECONDS = 30 * 60
+DEFAULT_JOB_ROOT = os.path.join(tempfile.gettempdir(), "midi8bit-jobs")
 
 if PYTHON_RENDERER_DIR not in sys.path:
     sys.path.insert(0, PYTHON_RENDERER_DIR)
@@ -65,6 +70,24 @@ def _get_server_port(default=5002):
         return int(os.environ.get("PORT", default))
     except ValueError:
         return default
+
+
+def _get_download_ttl_seconds():
+    raw_ttl = app.config.get(
+        "WEB_DOWNLOAD_TTL_SECONDS",
+        os.environ.get("WEB_DOWNLOAD_TTL_SECONDS", DEFAULT_DOWNLOAD_TTL_SECONDS),
+    )
+    try:
+        return max(1, int(raw_ttl))
+    except (TypeError, ValueError):
+        return DEFAULT_DOWNLOAD_TTL_SECONDS
+
+
+def _get_job_root():
+    return app.config.get(
+        "SYNTHESISE_JOB_ROOT",
+        os.environ.get("WEB_SYNTHESISE_JOB_ROOT", DEFAULT_JOB_ROOT),
+    )
 
 
 def _normalise_locale(raw_locale):
@@ -134,6 +157,204 @@ def _parse_layers_from_request(form):
     return parsed_layers, runtime_layers
 
 
+def _validate_midi_upload(translations):
+    if "midi_file" not in request.files:
+        return None, jsonify({"error": translations["errors.no_midi_file_uploaded"]}), 400
+
+    uploaded_file = request.files["midi_file"]
+    if uploaded_file.filename == "":
+        return None, jsonify({"error": translations["errors.no_selected_file"]}), 400
+
+    return uploaded_file, None, None
+
+
+def _build_original_filename(uploaded_filename):
+    if not uploaded_filename:
+        return "output"
+
+    return os.path.splitext(os.path.basename(uploaded_filename))[0] or "output"
+
+
+def _render_uploaded_wav(uploaded_file, form, output_wav_path):
+    sample_rate = int(form.get("rate", 48000))
+    parsed_layers, runtime_layers = _parse_layers_from_request(form)
+
+    temp_midi = tempfile.NamedTemporaryFile(delete=False, suffix=".mid")
+    temp_midi.close()
+    try:
+        uploaded_file.save(temp_midi.name)
+        midi_to_wave.midi_to_audio(
+            temp_midi.name,
+            output_wav_path,
+            sample_rate,
+            parsed_layers,
+        )
+    finally:
+        try:
+            os.unlink(temp_midi.name)
+        except FileNotFoundError:
+            pass
+
+    original_filename = _build_original_filename(uploaded_file.filename)
+    return midi_to_wave.build_output_filename(original_filename, runtime_layers)
+
+
+def _is_valid_job_id(job_id):
+    if not isinstance(job_id, str) or len(job_id) != 32:
+        return False
+
+    try:
+        return uuid.UUID(hex=job_id).hex == job_id
+    except ValueError:
+        return False
+
+
+def _job_dir(job_id):
+    if not _is_valid_job_id(job_id):
+        return None
+    return os.path.join(_get_job_root(), job_id)
+
+
+def _job_metadata_path(job_id):
+    job_dir = _job_dir(job_id)
+    if job_dir is None:
+        return None
+    return os.path.join(job_dir, "metadata.json")
+
+
+def _write_job_metadata(job_id, metadata):
+    job_dir = _job_dir(job_id)
+    if job_dir is None:
+        raise ValueError("Invalid job id")
+
+    os.makedirs(job_dir, exist_ok=True)
+    metadata_path = _job_metadata_path(job_id)
+    temp_path = os.path.join(job_dir, f"metadata.{uuid.uuid4().hex}.tmp")
+    with open(temp_path, "w", encoding="utf-8") as file:
+        json.dump(metadata, file, sort_keys=True)
+    os.replace(temp_path, metadata_path)
+
+
+def _read_job_metadata(job_id):
+    metadata_path = _job_metadata_path(job_id)
+    if metadata_path is None or not os.path.exists(metadata_path):
+        return None
+
+    with open(metadata_path, encoding="utf-8") as file:
+        metadata = json.load(file)
+
+    expires_at = metadata.get("expires_at")
+    if expires_at is not None and time.time() > expires_at:
+        _delete_job(job_id)
+        return {
+            "job_id": job_id,
+            "status": "expired",
+        }
+
+    return metadata
+
+
+def _delete_job(job_id):
+    job_dir = _job_dir(job_id)
+    if job_dir:
+        shutil.rmtree(job_dir, ignore_errors=True)
+
+
+def _cleanup_expired_jobs():
+    job_root = _get_job_root()
+    if not os.path.isdir(job_root):
+        return
+
+    for job_id in os.listdir(job_root):
+        if _is_valid_job_id(job_id):
+            _read_job_metadata(job_id)
+
+
+def _job_payload(metadata):
+    status = metadata.get("status", "expired")
+    payload = {
+        "job_id": metadata.get("job_id"),
+        "status": status,
+    }
+    for key in ("created_at", "updated_at", "expires_at", "download_name", "size_bytes", "error"):
+        if key in metadata:
+            payload[key] = metadata[key]
+
+    if status == "ready":
+        payload["download_url"] = f"/synthesise/jobs/{metadata['job_id']}/download"
+
+    return payload
+
+
+def _initial_job_metadata(job_id, uploaded_filename):
+    now = time.time()
+    return {
+        "job_id": job_id,
+        "status": "queued",
+        "source_name": os.path.basename(uploaded_filename or ""),
+        "created_at": now,
+        "updated_at": now,
+        "expires_at": now + _get_download_ttl_seconds(),
+    }
+
+
+def _update_job_status(job_id, **updates):
+    metadata = _read_job_metadata(job_id)
+    if metadata is None or metadata.get("status") == "expired":
+        return
+
+    metadata.update(updates)
+    metadata["updated_at"] = time.time()
+    _write_job_metadata(job_id, metadata)
+
+
+def _run_synthesise_job(job_id, input_path, form_payload, uploaded_filename):
+    output_path = os.path.join(_job_dir(job_id), "output.wav")
+    _update_job_status(job_id, status="rendering")
+    try:
+        class SavedUpload:
+            filename = uploaded_filename
+
+            def save(self, destination):
+                shutil.copyfile(input_path, destination)
+
+        download_name = _render_uploaded_wav(SavedUpload(), form_payload, output_path)
+        now = time.time()
+        _update_job_status(
+            job_id,
+            status="ready",
+            download_name=download_name,
+            size_bytes=os.path.getsize(output_path),
+            expires_at=now + _get_download_ttl_seconds(),
+        )
+    except Exception as exc:
+        now = time.time()
+        _update_job_status(
+            job_id,
+            status="failed",
+            error=str(exc),
+            expires_at=now + _get_download_ttl_seconds(),
+        )
+    finally:
+        try:
+            os.unlink(input_path)
+        except FileNotFoundError:
+            pass
+
+
+def _start_synthesise_job(job_id, input_path, form_payload, uploaded_filename):
+    if app.config.get("SYNTHESISE_JOBS_INLINE"):
+        _run_synthesise_job(job_id, input_path, form_payload, uploaded_filename)
+        return
+
+    thread = Thread(
+        target=_run_synthesise_job,
+        args=(job_id, input_path, form_payload, uploaded_filename),
+        daemon=True,
+    )
+    thread.start()
+
+
 @app.route("/")
 def index():
     locale, translations, is_explicit_override = _get_locale_context()
@@ -166,35 +387,16 @@ def preview_asset(filename):
 def synthesise():
     _locale, translations, _is_explicit_override = _get_locale_context()
 
-    if "midi_file" not in request.files:
-        return jsonify({"error": translations["errors.no_midi_file_uploaded"]}), 400
-
-    file = request.files["midi_file"]
-    if file.filename == "":
-        return jsonify({"error": translations["errors.no_selected_file"]}), 400
+    file, error_response, status_code = _validate_midi_upload(translations)
+    if error_response is not None:
+        return error_response, status_code
 
     temp_paths = []
     try:
-        sample_rate = int(request.form.get("rate", 48000))
-        parsed_layers, runtime_layers = _parse_layers_from_request(request.form)
-
-        temp_midi = tempfile.NamedTemporaryFile(delete=False, suffix=".mid")
         temp_wav = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-        temp_midi.close()
         temp_wav.close()
-        temp_paths.extend([temp_midi.name, temp_wav.name])
-
-        file.save(temp_midi.name)
-        midi_to_wave.midi_to_audio(
-            temp_midi.name,
-            temp_wav.name,
-            sample_rate,
-            parsed_layers,
-        )
-
-        original_filename = "output"
-        if file.filename:
-            original_filename = os.path.splitext(file.filename)[0]
+        temp_paths.append(temp_wav.name)
+        download_name = _render_uploaded_wav(file, request.form, temp_wav.name)
 
         @after_this_request
         def _cleanup_temp_files(response):
@@ -208,7 +410,7 @@ def synthesise():
         return send_file(
             temp_wav.name,
             as_attachment=True,
-            download_name=midi_to_wave.build_output_filename(original_filename, runtime_layers),
+            download_name=download_name,
         )
     except ValueError as exc:
         for temp_path in temp_paths:
@@ -224,6 +426,69 @@ def synthesise():
             except FileNotFoundError:
                 pass
         return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/synthesise/jobs", methods=["POST"])
+def create_synthesise_job():
+    _locale, translations, _is_explicit_override = _get_locale_context()
+    file, error_response, status_code = _validate_midi_upload(translations)
+    if error_response is not None:
+        return error_response, status_code
+
+    _cleanup_expired_jobs()
+    job_id = uuid.uuid4().hex
+    job_dir = _job_dir(job_id)
+    os.makedirs(job_dir, exist_ok=True)
+    input_path = os.path.join(job_dir, "input.mid")
+
+    try:
+        file.save(input_path)
+        _write_job_metadata(job_id, _initial_job_metadata(job_id, file.filename))
+        _start_synthesise_job(job_id, input_path, request.form.to_dict(flat=True), file.filename)
+    except ValueError as exc:
+        _delete_job(job_id)
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        _delete_job(job_id)
+        return jsonify({"error": str(exc)}), 500
+
+    metadata = _read_job_metadata(job_id)
+    return jsonify(_job_payload(metadata)), 202
+
+
+@app.route("/synthesise/jobs/<job_id>", methods=["GET"])
+def get_synthesise_job(job_id):
+    metadata = _read_job_metadata(job_id)
+    if metadata is None:
+        return jsonify({"job_id": job_id, "status": "expired"}), 410
+
+    payload = _job_payload(metadata)
+    if payload["status"] == "expired":
+        return jsonify(payload), 410
+
+    return jsonify(payload)
+
+
+@app.route("/synthesise/jobs/<job_id>/download", methods=["GET"])
+def download_synthesise_job(job_id):
+    metadata = _read_job_metadata(job_id)
+    if metadata is None or metadata.get("status") == "expired":
+        return jsonify({"job_id": job_id, "status": "expired"}), 410
+    if metadata.get("status") == "failed":
+        return jsonify(_job_payload(metadata)), 400
+    if metadata.get("status") != "ready":
+        return jsonify(_job_payload(metadata)), 409
+
+    output_path = os.path.join(_job_dir(job_id), "output.wav")
+    if not os.path.exists(output_path):
+        _delete_job(job_id)
+        return jsonify({"job_id": job_id, "status": "expired"}), 410
+
+    return send_file(
+        output_path,
+        as_attachment=True,
+        download_name=metadata.get("download_name", "output.wav"),
+    )
 
 
 if __name__ == "__main__":
