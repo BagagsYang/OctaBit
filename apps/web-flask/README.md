@@ -64,9 +64,11 @@ waiting for a single request to upload, render, and download:
 - `POST /synthesise/jobs`: accepts the same form fields and returns a job id.
 - `GET /synthesise/jobs/<job_id>`: reports queued, rendering, ready, failed, or expired status.
 - `GET /synthesise/jobs/<job_id>/download`: downloads the ready WAV file.
+- `DELETE /synthesise/jobs/<job_id>`: removes the temporary server file when a user clears converted files.
 
 Ready job files are temporary and expire after `WEB_DOWNLOAD_TTL_SECONDS`, which
-defaults to 1800 seconds.
+defaults to 1800 seconds. The browser also deletes ready server files immediately
+when the user clears the converted files list.
 
 ## Output naming
 

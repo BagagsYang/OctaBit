@@ -1722,25 +1722,43 @@
         renderConvertedFiles();
     }
 
-    function addConvertedServerFile(downloadName, size, sourceName, downloadUrl) {
+    function addConvertedServerFile(downloadName, size, sourceName, downloadUrl, deleteUrl) {
         convertedFiles.unshift({
             name: downloadName,
             sourceName,
             size,
             url: downloadUrl,
             objectUrl: false,
+            deleteUrl,
         });
         renderConvertedFiles();
     }
 
-    function clearConvertedFiles() {
-        convertedFiles.forEach((file) => {
+    function releaseConvertedServerFile(file) {
+        if (!file.deleteUrl) {
+            return Promise.resolve();
+        }
+
+        return fetch(file.deleteUrl, {
+            method: 'DELETE',
+            keepalive: true,
+        }).catch((error) => {
+            console.warn('Failed to delete converted server file.', error);
+        });
+    }
+
+    async function clearConvertedFiles() {
+        const filesToClear = [...convertedFiles];
+        convertedFiles = [];
+        renderConvertedFiles();
+
+        filesToClear.forEach((file) => {
             if (file.objectUrl) {
                 window.URL.revokeObjectURL(file.url);
             }
         });
-        convertedFiles = [];
-        renderConvertedFiles();
+
+        await Promise.all(filesToClear.map(releaseConvertedServerFile));
     }
 
     queueList.addEventListener('dragstart', (event) => {
@@ -2502,6 +2520,7 @@
                     readyJob.size_bytes || 0,
                     file.name,
                     downloadUrl,
+                    readyJob.delete_url ? new URL(readyJob.delete_url, window.location.origin).toString() : null,
                 );
                 processingStatus.textContent = t('status.downloading_file', {
                     current: index + 1,

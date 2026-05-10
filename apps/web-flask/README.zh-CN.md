@@ -63,8 +63,9 @@ apps\web-flask\Launch_Synthesiser.bat
 - `POST /synthesise/jobs`：接受相同表单字段并返回任务 id。
 - `GET /synthesise/jobs/<job_id>`：报告 queued、rendering、ready、failed 或 expired 状态。
 - `GET /synthesise/jobs/<job_id>/download`：下载已准备好的 WAV 文件。
+- `DELETE /synthesise/jobs/<job_id>`：当用户清空已转换文件列表时删除服务器上的临时文件。
 
-已准备好的任务文件是临时文件，会在 `WEB_DOWNLOAD_TTL_SECONDS` 后过期；默认值为 1800 秒。
+已准备好的任务文件是临时文件，会在 `WEB_DOWNLOAD_TTL_SECONDS` 后过期；默认值为 1800 秒。浏览器也会在用户清空已转换文件列表时立即删除服务器上已准备好的文件。
 
 ## 输出命名
 

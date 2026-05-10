@@ -176,6 +176,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual("lead_sine.wav", payload["download_name"])
         self.assertGreater(payload["size_bytes"], 4)
         self.assertIn("/synthesise/jobs/", payload["download_url"])
+        self.assertIn("/synthesise/jobs/", payload["delete_url"])
 
         status_response = self.client.get(f"/synthesise/jobs/{payload['job_id']}")
         self.addCleanup(status_response.close)
@@ -188,6 +189,42 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(b"RIFF", download_response.data[:4])
         self.assertIn("attachment;", download_response.headers["Content-Disposition"])
         self.assertIn("lead_sine.wav", download_response.headers["Content-Disposition"])
+
+    def test_synthesise_job_delete_removes_ready_download(self):
+        response = self.client.post(
+            "/synthesise/jobs",
+            data={
+                "rate": "16000",
+                "layers_json": json.dumps([{
+                    "type": "sine",
+                    "duty": 0.5,
+                    "volume": 1.0,
+                    "frequency_curve": [],
+                }]),
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        payload = response.get_json()
+        output_path = Path(web_app._job_dir(payload["job_id"])) / "output.wav"
+        self.assertTrue(output_path.exists())
+
+        delete_response = self.client.delete(payload["delete_url"])
+        self.addCleanup(delete_response.close)
+        self.assertEqual(204, delete_response.status_code)
+        self.assertFalse(output_path.exists())
+
+        status_response = self.client.get(f"/synthesise/jobs/{payload['job_id']}")
+        self.addCleanup(status_response.close)
+        self.assertEqual(410, status_response.status_code)
+        self.assertEqual("expired", status_response.get_json()["status"])
+
+        download_response = self.client.get(payload["download_url"])
+        self.addCleanup(download_response.close)
+        self.assertEqual(410, download_response.status_code)
+        self.assertEqual("expired", download_response.get_json()["status"])
 
     def test_synthesise_job_reports_failed_status(self):
         response = self.client.post(

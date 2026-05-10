@@ -282,6 +282,7 @@ def _job_payload(metadata):
 
     if status == "ready":
         payload["download_url"] = f"/synthesise/jobs/{metadata['job_id']}/download"
+        payload["delete_url"] = f"/synthesise/jobs/{metadata['job_id']}"
 
     return payload
 
@@ -467,6 +468,12 @@ def get_synthesise_job(job_id):
         return jsonify(payload), 410
 
     return jsonify(payload)
+
+
+@app.route("/synthesise/jobs/<job_id>", methods=["DELETE"])
+def delete_synthesise_job(job_id):
+    _delete_job(job_id)
+    return "", 204
 
 
 @app.route("/synthesise/jobs/<job_id>/download", methods=["GET"])
