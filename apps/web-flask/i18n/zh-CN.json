@@ -19,6 +19,7 @@
   "converted.empty": "处理完成的文件会显示在这里。",
   "converted.download": "下载",
   "converted.clear": "清空已转换文件",
+  "converted.clear_confirm": "清空已转换文件会删除服务器上的临时 WAV 文件，之后无法保留或再次下载。",
   "parameters.title": "参数控制中心",
   "parameters.readout": "最多 4 层",
   "layers.title": "波形层",

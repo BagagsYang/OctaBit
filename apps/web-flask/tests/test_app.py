@@ -84,6 +84,12 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("Converted Files", body)
         self.assertIn('id="convertedList"', body)
         self.assertIn("Process &amp; Download", body)
+        self.assertIn(
+            "Clearing converted files deletes the temporary WAV files from the server, "
+            "so they cannot be retained or downloaded again.",
+            body,
+        )
+        self.assertIn("window.confirm(t('converted.clear_confirm'))", body)
         self.assertNotIn('id="themeToggle"', body)
 
     def test_index_includes_language_switch_state_preservation_script(self):

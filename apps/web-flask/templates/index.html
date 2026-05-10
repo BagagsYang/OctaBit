@@ -1816,7 +1816,11 @@
         fileInput.value = '';
     });
 
-    clearConvertedBtn.addEventListener('click', clearConvertedFiles);
+    clearConvertedBtn.addEventListener('click', () => {
+        if (window.confirm(t('converted.clear_confirm'))) {
+            clearConvertedFiles();
+        }
+    });
 
     window.addEventListener('beforeunload', clearConvertedFiles);
 
