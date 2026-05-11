@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ translations["meta.page_title"] }}</title>
+    <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,10 +34,12 @@
                 <button
                     type="button"
                     class="settings-btn"
-                    id="settingsPlaceholderBtn"
+                    id="settingsButton"
                     title="{{ translations['toolbar.settings'] }}"
                     aria-label="{{ translations['toolbar.settings'] }}"
-                    disabled
+                    aria-controls="settingsDialog"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
                         <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
@@ -55,6 +58,43 @@
                 </select>
             </div>
         </header>
+
+        <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsDialogTitle">
+            <div class="settings-dialog-surface">
+                <div class="settings-dialog-header">
+                    <h2 class="settings-dialog-title" id="settingsDialogTitle">{{ translations["settings.title"] }}</h2>
+                    <button
+                        type="button"
+                        class="settings-close-btn"
+                        id="settingsCloseButton"
+                        aria-label="{{ translations['settings.close'] }}"
+                    >x</button>
+                </div>
+                <section class="settings-section" aria-labelledby="themeSettingsTitle">
+                    <h3 class="settings-section-title" id="themeSettingsTitle">{{ translations["settings.theme"] }}</h3>
+                    <div class="theme-choice-group" role="radiogroup" aria-labelledby="themeSettingsTitle">
+                        <label class="theme-choice">
+                            <input
+                                class="theme-choice-input"
+                                type="radio"
+                                name="themeChoice"
+                                value="light"
+                            >
+                            <span class="theme-choice-text">{{ translations["settings.theme_light"] }}</span>
+                        </label>
+                        <label class="theme-choice">
+                            <input
+                                class="theme-choice-input"
+                                type="radio"
+                                name="themeChoice"
+                                value="dark"
+                            >
+                            <span class="theme-choice-text">{{ translations["settings.theme_dark"] }}</span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+        </dialog>
 
         <form id="synthForm">
             <div class="workspace-grid">

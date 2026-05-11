@@ -6,6 +6,9 @@
     const SUPPORTED_LOCALES = appConfig.supportedLocales;
     const LOCALE_COOKIE_NAME = appConfig.localeCookieName;
     const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+    const themeController = window.midi8bitTheme || {};
+    const THEME_STORAGE_KEY = themeController.storageKey || 'midi8bitTheme';
+    const THEME_VALUES = ['light', 'dark'];
     const LANGUAGE_SWITCH_STATE_KEY = 'pendingLanguageSwitchState';
     const LANGUAGE_SWITCH_STATE_DB_NAME = 'midi8bitWebState';
     const LANGUAGE_SWITCH_STATE_STORE_NAME = 'pageState';
@@ -83,6 +86,10 @@
     const queueEmpty = document.getElementById('queueEmpty');
     const processingStatus = document.getElementById('processingStatus');
     const languageSelect = document.getElementById('languageSelect');
+    const settingsButton = document.getElementById('settingsButton');
+    const settingsDialog = document.getElementById('settingsDialog');
+    const settingsCloseButton = document.getElementById('settingsCloseButton');
+    const themeChoiceInputs = Array.from(document.querySelectorAll('input[name="themeChoice"]'));
     const layersContainer = document.getElementById('layersContainer');
     const addLayerBtn = document.getElementById('addLayerBtn');
     const removeLayerBtn = document.getElementById('removeLayerBtn');
@@ -97,8 +104,136 @@
     htmlElement.setAttribute('lang', CURRENT_LOCALE);
     languageSelect.value = CURRENT_LOCALE;
 
-    htmlElement.setAttribute('data-bs-theme', 'dark');
+    function isThemeValue(value) {
+        return THEME_VALUES.includes(value);
+    }
+
+    function storedTheme() {
+        if (typeof themeController.storedTheme === 'function') {
+            return themeController.storedTheme();
+        }
+
+        try {
+            const value = localStorage.getItem(THEME_STORAGE_KEY);
+            return isThemeValue(value) ? value : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function systemTheme() {
+        if (typeof themeController.systemTheme === 'function') {
+            return themeController.systemTheme();
+        }
+
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            return 'light';
+        }
+        return 'dark';
+    }
+
+    function resolvedTheme() {
+        return storedTheme() || systemTheme();
+    }
+
+    function applyTheme(theme) {
+        if (typeof themeController.applyTheme === 'function') {
+            return themeController.applyTheme(theme);
+        }
+
+        const nextTheme = isThemeValue(theme) ? theme : systemTheme();
+        htmlElement.setAttribute('data-bs-theme', nextTheme);
+        return nextTheme;
+    }
+
+    function syncThemeChoices(theme = resolvedTheme()) {
+        themeChoiceInputs.forEach((input) => {
+            input.checked = input.value === theme;
+        });
+    }
+
+    function saveTheme(theme) {
+        if (!isThemeValue(theme)) {
+            return;
+        }
+
+        try {
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
+        } catch (error) {
+            console.warn('Failed to save theme preference.', error);
+        }
+
+        applyTheme(theme);
+        syncThemeChoices(theme);
+    }
+
+    let settingsReturnFocus = null;
+
+    function restoreSettingsFocus() {
+        settingsButton.setAttribute('aria-expanded', 'false');
+        if (settingsReturnFocus && document.contains(settingsReturnFocus)) {
+            settingsReturnFocus.focus();
+        }
+        settingsReturnFocus = null;
+    }
+
+    function openSettingsDialog() {
+        settingsReturnFocus = document.activeElement || settingsButton;
+        syncThemeChoices(resolvedTheme());
+        settingsButton.setAttribute('aria-expanded', 'true');
+
+        if (typeof settingsDialog.showModal === 'function') {
+            settingsDialog.showModal();
+        } else {
+            settingsDialog.setAttribute('open', '');
+        }
+    }
+
+    function closeSettingsDialog() {
+        if (typeof settingsDialog.close === 'function' && settingsDialog.open) {
+            settingsDialog.close();
+        } else {
+            settingsDialog.removeAttribute('open');
+            restoreSettingsFocus();
+        }
+    }
+
+    const currentTheme = applyTheme(resolvedTheme());
+    syncThemeChoices(currentTheme);
     keepQueueToggle.checked = savedKeepQueuePreference === 'true';
+
+    settingsButton.addEventListener('click', openSettingsDialog);
+    settingsCloseButton.addEventListener('click', closeSettingsDialog);
+    settingsDialog.addEventListener('close', restoreSettingsFocus);
+    settingsDialog.addEventListener('click', (event) => {
+        if (event.target === settingsDialog) {
+            closeSettingsDialog();
+        }
+    });
+
+    themeChoiceInputs.forEach((input) => {
+        input.addEventListener('change', () => {
+            if (input.checked) {
+                saveTheme(input.value);
+            }
+        });
+    });
+
+    if (window.matchMedia) {
+        const systemThemeQuery = window.matchMedia('(prefers-color-scheme: light)');
+        const syncSystemTheme = () => {
+            if (!storedTheme()) {
+                const nextTheme = applyTheme(systemTheme());
+                syncThemeChoices(nextTheme);
+            }
+        };
+
+        if (typeof systemThemeQuery.addEventListener === 'function') {
+            systemThemeQuery.addEventListener('change', syncSystemTheme);
+        } else if (typeof systemThemeQuery.addListener === 'function') {
+            systemThemeQuery.addListener(syncSystemTheme);
+        }
+    }
 
     languageSelect.addEventListener('change', async () => {
         const selectedLocale = languageSelect.value;

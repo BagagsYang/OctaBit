@@ -8,7 +8,7 @@ locale.
 ## French slice coverage
 
 The first French slice covers the visible browser UI already routed through the
-shared catalog: the language selector, theme tooltip, MIDI queue controls,
+shared catalog: the language selector, settings dialog, theme controls, MIDI queue controls,
 layer and curve controls, waveform labels, processing status and alerts, and
 the Flask missing-file validation errors used by `/synthesise`.
 
