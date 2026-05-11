@@ -75,7 +75,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("Fichier(s) actuel(s)", response.get_data(as_text=True))
         self.assertIn("web_locale=fr", response.headers.get("Set-Cookie", ""))
 
-    def test_index_renders_control_panel_without_theme_toggle(self):
+    def test_index_renders_thin_control_panel_without_theme_toggle(self):
         response = self.client.get("/")
         self.addCleanup(response.close)
 
@@ -85,24 +85,35 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn('id="convertedList"', body)
         self.assertIn('id="settingsPlaceholderBtn"', body)
         self.assertIn('aria-label="Settings"', body)
+        self.assertIn('class="module output-module"', body)
+        self.assertIn('id="midi8bit-config"', body)
+        self.assertIn("/static/css/app.css", body)
+        self.assertIn("/static/js/app.js", body)
         self.assertIn("Process &amp; Download", body)
         self.assertIn(
             "Clearing converted files deletes the temporary WAV files from the server, "
             "so they cannot be retained or downloaded again.",
             body,
         )
-        self.assertIn("window.confirm(t('converted.clear_confirm'))", body)
+        self.assertNotIn("<style>", body)
+        self.assertNotIn('class="action-rail"', body)
         self.assertNotIn('id="themeToggle"', body)
 
-    def test_index_includes_language_switch_state_preservation_script(self):
-        response = self.client.get("/")
+    def test_static_browser_script_preserves_interaction_hooks(self):
+        response = self.client.get("/static/js/app.js")
         self.addCleanup(response.close)
 
         body = response.get_data(as_text=True)
+        self.assertEqual(200, response.status_code)
+        self.assertIn("document.getElementById('midi8bit-config')", body)
         self.assertIn("persistLanguageSwitchState", body)
         self.assertIn("restoreLanguageSwitchState", body)
         self.assertIn("pendingLanguageSwitchState", body)
         self.assertIn("SUPPORTED_LOCALES.includes(selectedLocale)", body)
+        self.assertIn("window.confirm(t('converted.clear_confirm'))", body)
+        self.assertIn("layer-control-grid", body)
+        self.assertNotIn("themeToggle", body)
+        self.assertNotIn("updateThemeIcon", body)
 
     def test_supported_locale_catalogs_have_matching_keys(self):
         base_keys = set(self._load_catalog(web_app.DEFAULT_LOCALE))
