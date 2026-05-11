@@ -75,7 +75,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("Fichier(s) actuel(s)", response.get_data(as_text=True))
         self.assertIn("web_locale=fr", response.headers.get("Set-Cookie", ""))
 
-    def test_index_renders_control_panel_without_theme_toggle(self):
+    def test_index_renders_settings_dialog_with_theme_choice(self):
         response = self.client.get("/")
         self.addCleanup(response.close)
 
@@ -83,26 +83,71 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("MIDI-8BIT CONVERTER", body)
         self.assertIn("Converted Files", body)
         self.assertIn('id="convertedList"', body)
-        self.assertIn('id="settingsPlaceholderBtn"', body)
+        self.assertIn('id="settingsButton"', body)
         self.assertIn('aria-label="Settings"', body)
+        self.assertIn('aria-controls="settingsDialog"', body)
+        self.assertNotRegex(body, r'id="settingsButton"[\s\S]{0,180}disabled')
+        self.assertIn('id="settingsDialog"', body)
+        self.assertIn('id="settingsDialogTitle"', body)
+        self.assertIn('name="themeChoice"', body)
+        self.assertIn('value="light"', body)
+        self.assertIn('value="dark"', body)
+        self.assertIn("Theme", body)
+        self.assertIn("Light", body)
+        self.assertIn("Dark", body)
+        self.assertIn('class="module output-module"', body)
+        self.assertIn('id="midi8bit-config"', body)
+        self.assertIn("/static/js/theme-init.js", body)
+        self.assertIn("/static/css/app.css", body)
+        self.assertIn("/static/js/app.js", body)
+        self.assertLess(body.index("/static/js/theme-init.js"), body.index("/static/css/app.css"))
         self.assertIn("Process &amp; Download", body)
         self.assertIn(
             "Clearing converted files deletes the temporary WAV files from the server, "
             "so they cannot be retained or downloaded again.",
             body,
         )
-        self.assertIn("window.confirm(t('converted.clear_confirm'))", body)
+        self.assertNotIn("<style>", body)
+        self.assertNotIn('class="action-rail"', body)
+        self.assertNotIn('id="settingsPlaceholderBtn"', body)
         self.assertNotIn('id="themeToggle"', body)
 
-    def test_index_includes_language_switch_state_preservation_script(self):
-        response = self.client.get("/")
+    def test_static_browser_script_preserves_interaction_hooks(self):
+        response = self.client.get("/static/js/app.js")
         self.addCleanup(response.close)
 
         body = response.get_data(as_text=True)
+        self.assertEqual(200, response.status_code)
+        self.assertIn("document.getElementById('midi8bit-config')", body)
         self.assertIn("persistLanguageSwitchState", body)
         self.assertIn("restoreLanguageSwitchState", body)
         self.assertIn("pendingLanguageSwitchState", body)
         self.assertIn("SUPPORTED_LOCALES.includes(selectedLocale)", body)
+        self.assertIn("window.confirm(t('converted.clear_confirm'))", body)
+        self.assertIn("layer-control-grid", body)
+        self.assertIn("document.getElementById('settingsButton')", body)
+        self.assertIn("document.getElementById('settingsDialog')", body)
+        self.assertIn("input[name=\"themeChoice\"]", body)
+        self.assertIn("midi8bitTheme", body)
+        self.assertIn("localStorage.setItem(THEME_STORAGE_KEY, theme)", body)
+        self.assertIn("prefers-color-scheme: light", body)
+        self.assertNotIn("htmlElement.setAttribute('data-bs-theme', 'dark')", body)
+        self.assertNotIn("themeToggle", body)
+        self.assertNotIn("updateThemeIcon", body)
+
+    def test_theme_init_script_resolves_stored_or_system_theme(self):
+        response = self.client.get("/static/js/theme-init.js")
+        self.addCleanup(response.close)
+
+        body = response.get_data(as_text=True)
+        self.assertEqual(200, response.status_code)
+        self.assertIn("midi8bitTheme", body)
+        self.assertIn("THEME_STORAGE_KEY = 'midi8bitTheme'", body)
+        self.assertIn("THEME_VALUES = ['light', 'dark']", body)
+        self.assertIn("THEME_VALUES.includes(value)", body)
+        self.assertIn("localStorage.getItem(THEME_STORAGE_KEY)", body)
+        self.assertIn("prefers-color-scheme: light", body)
+        self.assertIn("data-bs-theme", body)
 
     def test_supported_locale_catalogs_have_matching_keys(self):
         base_keys = set(self._load_catalog(web_app.DEFAULT_LOCALE))
