@@ -2,7 +2,11 @@ FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8000
+    PORT=8000 \
+    WEB_CONCURRENCY=2 \
+    GUNICORN_TIMEOUT=600 \
+    WEB_DOWNLOAD_TTL_SECONDS=1800 \
+    WEB_SYNTHESISE_JOB_ROOT=/tmp/midi8bit-jobs
 
 WORKDIR /app
 
@@ -26,4 +30,6 @@ USER app
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "gunicorn --chdir /app/apps/web-flask --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --timeout ${GUNICORN_TIMEOUT:-120} --access-logfile - --error-logfile - app:app"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD python -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/' % os.environ.get('PORT', '8000'), timeout=5).read(1)"
+
+CMD ["sh", "-c", "gunicorn --chdir /app/apps/web-flask --bind 0.0.0.0:${PORT:-8000} --workers ${WEB_CONCURRENCY:-2} --timeout ${GUNICORN_TIMEOUT:-600} --access-logfile - --error-logfile - app:app"]

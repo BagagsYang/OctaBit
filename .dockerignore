@@ -8,6 +8,7 @@
 !deploy/web-flask/
 !deploy/web-flask/Dockerfile
 !deploy/web-flask/README.md
+!deploy/web-flask/README.zh-CN.md
 
 !apps/
 !apps/web-flask/

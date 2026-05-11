@@ -20,6 +20,8 @@ Check the service:
 docker compose -f compose.web.yml ps
 ```
 
+When the container is healthy, `docker compose ps` should show the service as running with a healthy status.
+
 Test it locally on the server:
 
 ```bash
@@ -57,8 +59,9 @@ docker compose -f compose.web.yml down
 ## Production Notes
 
 - The container runs Gunicorn on `0.0.0.0:${PORT:-8000}` as a non-root user.
-- Gunicorn is configured with a 600 second timeout in `compose.web.yml`. This gives slow SSH tunnel downloads more time, but the browser still downloads the generated WAV after the server has finished rendering it.
-- Uploaded MIDI files, generated WAV files, and short-lived render job metadata are temporary files under `/tmp`; the compose file mounts `/tmp` as an in-memory tmpfs and no upload data is persisted.
+- The image default and `compose.web.yml` both set `GUNICORN_TIMEOUT=600`. This gives slow SSH tunnel downloads more time, while the browser still downloads the generated WAV only after the server has finished rendering it.
+- The container includes a lightweight health check against `/` using Python's standard library, so no extra curl package is needed in the image.
+- Uploaded MIDI files, generated WAV files, and short-lived render job metadata are temporary files under `WEB_SYNTHESISE_JOB_ROOT`, defaulting to `/tmp/midi8bit-jobs`; the compose file mounts `/tmp` as a 1 GB in-memory tmpfs and no upload data is persisted.
 - Ready render jobs are kept for `WEB_DOWNLOAD_TTL_SECONDS` seconds, defaulting to 1800 seconds, so a user can retry a timed-out WAV download without rendering again. When a user clears the converted files list, the browser asks the server to delete those ready files immediately.
 - The host port is intentionally bound to `127.0.0.1:8000` for tunnel-only testing.
 - For public deployment later, put Caddy or Nginx in front of this service and expose only ports 80 and 443 publicly. Keep the Flask/Gunicorn service private to the server or Docker network.
