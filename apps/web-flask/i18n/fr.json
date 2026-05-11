@@ -54,7 +54,7 @@
   "layer.waveform_type": "Type de forme d'onde",
   "layer.pulse_width": "Largeur d'impulsion",
   "layer.base_volume": "Volume de base",
-  "layer.enable_curve": "Activer la courbe fréquence-gain",
+  "layer.enable_curve": "Courbe fréquence-gain",
   "curve.add_point": "Ajouter un point",
   "curve.remove_selected": "Supprimer la sélection",
   "curve.reset": "Réinitialiser la courbe",

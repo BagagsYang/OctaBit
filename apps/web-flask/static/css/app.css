@@ -741,9 +741,9 @@ input:focus-visible,
 
 .layer-control-grid {
     display: grid;
-    grid-template-columns: minmax(130px, 0.72fr) minmax(160px, 1fr) minmax(160px, 1fr) minmax(150px, 0.78fr);
+    grid-template-columns: repeat(3, minmax(160px, 1fr)) minmax(150px, 0.78fr);
     gap: 12px;
-    align-items: end;
+    align-items: start;
 }
 
 .layer-title {
@@ -798,6 +798,21 @@ input:focus-visible,
     display: grid;
     gap: 7px;
     margin-bottom: 10px;
+}
+
+.waveform-field .field-label {
+    height: 28px;
+}
+
+.waveform-field .control-select {
+    height: 36px;
+    min-height: 36px;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.layer-volume-wide {
+    grid-column: span 2;
 }
 
 .field-label,
@@ -1147,6 +1162,14 @@ input:focus-visible,
 
     .layer-control-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .layer-volume-wide {
+        grid-column: auto;
+    }
+
+    .waveform-field .field-label {
+        height: auto;
     }
 
     .layer-curve-toggle {

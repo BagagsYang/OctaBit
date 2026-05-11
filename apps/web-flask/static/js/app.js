@@ -913,7 +913,7 @@
                 <div class="layer-title-row">
                     <div>
                         <div class="layer-title">${t('layer.title', { index: layerIndex + 1 })}</div>
-                        <div class="layer-state">${layer.curveEnabled ? t('layer.curve_active') : t('layer.curve_flat')}</div>
+                        ${layer.curveEnabled ? `<div class="layer-state">${t('layer.curve_active')}</div>` : ''}
                     </div>
                     <button
                         type="button"
@@ -924,7 +924,7 @@
                     ><span class="play-icon" aria-hidden="true"></span></button>
                 </div>
                 <div class="layer-control-grid">
-                    <div class="field-block">
+                    <div class="field-block waveform-field">
                         <label class="field-label" for="waveType${layerIndex}">${t('layer.waveform_type')}</label>
                         <select
                             class="form-select control-select"
@@ -972,7 +972,7 @@
                             ], 0.01, 0.99)}
                         </div>
                     </div>
-                    <div class="field-block">
+                    <div class="field-block layer-volume-control ${layer.type === 'pulse' ? '' : 'layer-volume-wide'}">
                         <label class="fader-label" for="volumeFader${layerIndex}">
                             <span>${t('layer.base_volume')}</span>
                             <input

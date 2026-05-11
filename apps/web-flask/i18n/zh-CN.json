@@ -54,7 +54,7 @@
   "layer.waveform_type": "波形类型",
   "layer.pulse_width": "脉冲宽度",
   "layer.base_volume": "基础音量",
-  "layer.enable_curve": "启用频率-增益曲线",
+  "layer.enable_curve": "频率增益曲线",
   "curve.add_point": "添加点",
   "curve.remove_selected": "删除所选点",
   "curve.reset": "重置曲线",

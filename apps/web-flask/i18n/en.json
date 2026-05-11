@@ -54,7 +54,7 @@
   "layer.waveform_type": "Waveform Type",
   "layer.pulse_width": "Pulse Width",
   "layer.base_volume": "Base Volume",
-  "layer.enable_curve": "Enable frequency-gain curve",
+  "layer.enable_curve": "frequency-gain curve",
   "curve.add_point": "Add Point",
   "curve.remove_selected": "Remove Selected",
   "curve.reset": "Reset Curve",
