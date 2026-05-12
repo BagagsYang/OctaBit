@@ -256,12 +256,24 @@ input:focus-visible,
     border: 1px solid var(--border-color);
 }
 
-.language-select:focus,
 .control-select:focus {
     background-color: var(--surface-muted);
     color: var(--text-color);
     border-color: var(--accent-strong);
     box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+.theme-select:focus,
+.language-select:focus {
+    background-color: var(--surface-muted);
+    color: var(--text-color);
+    border-color: var(--border-color);
+    box-shadow: none;
+}
+
+.theme-select:focus-visible,
+.language-select:focus-visible {
+    outline: none;
 }
 
 .theme-select,

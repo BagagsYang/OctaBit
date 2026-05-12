@@ -176,6 +176,19 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertNotIn(".play-icon", body)
         self.assertNotIn("border-left: 10px solid currentColor", body)
 
+    def test_toolbar_theme_and_language_selects_do_not_show_focus_halo(self):
+        response = self.client.get("/static/css/app.css")
+        self.addCleanup(response.close)
+
+        body = response.get_data(as_text=True)
+        self.assertEqual(200, response.status_code)
+        self.assertIn(".theme-select:focus,\n.language-select:focus", body)
+        self.assertIn("box-shadow: none;", body)
+        self.assertIn(".theme-select:focus-visible,\n.language-select:focus-visible", body)
+        self.assertIn("outline: none;", body)
+        self.assertIn(".control-select:focus", body)
+        self.assertIn("box-shadow: 0 0 0 2px var(--accent-ring);", body)
+
     def test_theme_init_script_resolves_stored_or_system_theme(self):
         response = self.client.get("/static/js/theme-init.js")
         self.addCleanup(response.close)
