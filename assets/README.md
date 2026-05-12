@@ -1,12 +1,14 @@
 # Shared assets
 
+Language/语言: English | [简体中文](./README.zh-CN.md)
+
 `assets/previews/` is the canonical source of waveform preview WAV files.
 
 ## Usage
 
 - `apps/web-flask/` serves these files through a dedicated Flask route.
-- `apps/macos/` copies these files into the app bundle at build time.
-- `apps/windows/` links these files into the WinUI project at build and publish time.
+- The retained `apps/macos/` code copies these files into the app bundle at build time.
+- The retained `apps/windows/` code links these files into the WinUI project at build and publish time.
 
 ## Preview asset provenance
 

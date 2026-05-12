@@ -1,5 +1,7 @@
 # Web UI i18n
 
+Language/语言: English | [简体中文](./README.zh-CN.md)
+
 The web app uses the JSON catalogs in this directory for both Flask-rendered
 HTML and the inline browser UI in `templates/index.html`. Keep the key sets in
 `en.json`, `fr.json`, and `zh-CN.json` aligned; English remains the fallback

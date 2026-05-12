@@ -1,6 +1,8 @@
 # Python renderer
 
-This folder contains the canonical Python MIDI-to-WAV renderer used directly by the Flask app and macOS helper build, and indirectly by the Windows parity tests.
+Language/语言: English | [简体中文](./README.zh-CN.md)
+
+This folder contains the canonical Python MIDI-to-WAV renderer used directly by the Flask app and retained macOS helper build, and indirectly by the retained Windows parity tests.
 
 ## Public interface
 
@@ -43,4 +45,4 @@ UI code, packaging code, and platform-specific launch behavior should stay outsi
 
 - `requirements.txt` contains only the renderer/runtime dependencies.
 - Web-specific packages live in `apps/web-flask/requirements.txt`.
-- macOS helper build packages live in `apps/macos/requirements-build.txt`.
+- Retained macOS helper build packages live in `apps/macos/requirements-build.txt`.
