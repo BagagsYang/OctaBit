@@ -89,6 +89,7 @@
     const themeSelect = document.getElementById('themeSelect');
     const themeSelectIcon = document.getElementById('themeSelectIcon');
     const languageSelect = document.getElementById('languageSelect');
+    const languageSelectIcon = document.querySelector('.language-select-icon');
     const layersContainer = document.getElementById('layersContainer');
     const addLayerBtn = document.getElementById('addLayerBtn');
     const removeLayerBtn = document.getElementById('removeLayerBtn');
@@ -102,6 +103,9 @@
     document.title = t('meta.site_title');
     htmlElement.setAttribute('lang', CURRENT_LOCALE);
     languageSelect.value = CURRENT_LOCALE;
+    if (languageSelectIcon) {
+        languageSelectIcon.innerHTML = ICONS.svg('languages', 'lucide-icon language-option-icon');
+    }
 
     function isThemeValue(value) {
         return THEME_VALUES.includes(value);

@@ -91,6 +91,9 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertLess(body.index('id="themeSelectIcon"'), body.index('id="themeSelect"'))
         self.assertIn('aria-label="Theme"', body)
         self.assertIn('id="languageSelect"', body)
+        self.assertIn('class="language-select-frame"', body)
+        self.assertIn('class="language-select-icon"', body)
+        self.assertLess(body.index('class="language-select-icon"'), body.index('id="languageSelect"'))
         self.assertLess(body.index('id="themeSelect"'), body.index('id="languageSelect"'))
         self.assertIn('<option value="system">System</option>', body)
         self.assertIn('<option value="light">Light</option>', body)
@@ -137,7 +140,9 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("layer-control-grid", body)
         self.assertIn("document.getElementById('themeSelect')", body)
         self.assertIn("document.getElementById('themeSelectIcon')", body)
+        self.assertIn("document.querySelector('.language-select-icon')", body)
         self.assertIn("window.octabitLucideIcons", body)
+        self.assertIn("ICONS.svg('languages'", body)
         self.assertIn("ICONS.svg('x')", body)
         self.assertIn("ICONS.svg('play')", body)
         self.assertIn("ICONS.svg(selectedThemeIconName()", body)
@@ -169,6 +174,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn("window.octabitLucideIcons", body)
         self.assertIn("License: ISC License", body)
+        self.assertIn("languages:", body)
         self.assertIn("'moon-star':", body)
         self.assertIn("play:", body)
         self.assertIn("sun:", body)
@@ -212,6 +218,20 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("position: absolute;", body)
         self.assertIn("pointer-events: none;", body)
         self.assertIn("padding-left: 36px;", body)
+
+    def test_language_select_icon_matches_theme_icon_position(self):
+        response = self.client.get("/static/css/app.css")
+        self.addCleanup(response.close)
+
+        body = response.get_data(as_text=True)
+        self.assertEqual(200, response.status_code)
+        self.assertIn(".theme-select-frame,\n.language-select-frame", body)
+        self.assertIn(".theme-select,\n.language-select {\n    width: 100%;", body)
+        self.assertIn(".theme-select-icon,\n.language-select-icon", body)
+        self.assertIn(".theme-select-icon .lucide-icon,\n.language-select-icon .lucide-icon", body)
+        self.assertIn("width: 136px;", body)
+        self.assertIn("flex: 0 0 136px;", body)
+        self.assertIn("left: 12px;", body)
 
     def test_theme_init_script_resolves_stored_or_system_theme(self):
         response = self.client.get("/static/js/theme-init.js")

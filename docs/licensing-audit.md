@@ -177,7 +177,7 @@ checked for the specific named resources.
 | --- | --- | --- | --- |
 | Bootstrap CSS | `bootstrap@5.3.0` from jsDelivr/npm | MIT npm metadata | Loaded from CDN at runtime; no local Bootstrap files are bundled. |
 | IBM Plex Sans and IBM Plex Mono | Google Fonts CSS loading IBM-hosted font family names | SIL Open Font License 1.1 from IBM Plex upstream licence | Fonts are fetched from Google-hosted URLs at runtime; no font files are checked in. |
-| Lucide inline SVG icons | Copied SVG path data for `play`, `x`, `sun`, and `moon-star` from the Lucide icon set | ISC licence from <https://lucide.dev/license> and <https://github.com/lucide-icons/lucide/blob/main/LICENSE>; `x` is also listed as Feather-derived under MIT | Vendored inline in `apps/web-flask/static/js/lucide-icons.js`; no npm package, CDN, or build pipeline is used. |
+| Lucide inline SVG icons | Copied SVG path data for `play`, `x`, `sun`, `moon-star`, and `languages` from the Lucide icon set | ISC licence from <https://lucide.dev/license> and <https://github.com/lucide-icons/lucide/blob/main/LICENSE>; `x` is also listed as Feather-derived under MIT | Vendored inline in `apps/web-flask/static/js/lucide-icons.js`; no npm package, CDN, or build pipeline is used. |
 
 If these resources are vendored later, include their licence texts and notices
 in the repository and release artefacts. If they remain CDN resources, review

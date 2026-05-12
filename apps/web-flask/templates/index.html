@@ -55,16 +55,19 @@
                         <option value="dark">{{ translations["settings.theme_dark"] }}</option>
                     </select>
                 </span>
-                <select
-                    class="form-select form-select-sm language-select"
-                    id="languageSelect"
-                    title="{{ translations['toolbar.language_title'] }}"
-                    aria-label="{{ translations['toolbar.language_title'] }}"
-                >
-                    {% for language_code in supported_locales %}
-                    <option value="{{ language_code }}" {% if language_code == locale %}selected{% endif %}>{{ translations["toolbar.language_option." ~ language_code] }}</option>
-                    {% endfor %}
-                </select>
+                <span class="language-select-frame">
+                    <span class="language-select-icon" aria-hidden="true"></span>
+                    <select
+                        class="form-select form-select-sm language-select"
+                        id="languageSelect"
+                        title="{{ translations['toolbar.language_title'] }}"
+                        aria-label="{{ translations['toolbar.language_title'] }}"
+                    >
+                        {% for language_code in supported_locales %}
+                        <option value="{{ language_code }}" {% if language_code == locale %}selected{% endif %}>{{ translations["toolbar.language_option." ~ language_code] }}</option>
+                        {% endfor %}
+                    </select>
+                </span>
             </div>
         </header>
 
