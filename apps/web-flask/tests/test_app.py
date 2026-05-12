@@ -94,9 +94,11 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn('name="themeChoice"', body)
         self.assertIn('value="light"', body)
         self.assertIn('value="dark"', body)
+        self.assertIn('value="system"', body)
         self.assertIn("Theme", body)
         self.assertIn("Light", body)
         self.assertIn("Dark", body)
+        self.assertIn("System", body)
         self.assertIn('class="module output-module"', body)
         self.assertIn('id="octabit-config"', body)
         self.assertIn("/static/js/theme-init.js", body)
@@ -113,6 +115,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertNotIn('class="action-rail"', body)
         self.assertNotIn('id="settingsPlaceholderBtn"', body)
         self.assertNotIn('id="themeToggle"', body)
+        self.assertNotIn('id="followSystemThemeToggle"', body)
 
     def test_static_browser_script_preserves_interaction_hooks(self):
         response = self.client.get("/static/js/app.js")
@@ -132,9 +135,14 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("input[name=\"themeChoice\"]", body)
         self.assertIn("octabitTheme", body)
         self.assertIn("localStorage.setItem(THEME_STORAGE_KEY, theme)", body)
+        self.assertIn("localStorage.removeItem(THEME_STORAGE_KEY)", body)
+        self.assertIn("input.value === 'system'", body)
+        self.assertIn("prefers-color-scheme: dark", body)
         self.assertIn("prefers-color-scheme: light", body)
+        self.assertIn("const nextTheme = applyTheme();", body)
         self.assertNotIn("htmlElement.setAttribute('data-bs-theme', 'dark')", body)
         self.assertNotIn("themeToggle", body)
+        self.assertNotIn("followSystemThemeToggle", body)
         self.assertNotIn("updateThemeIcon", body)
 
     def test_theme_init_script_resolves_stored_or_system_theme(self):
@@ -148,6 +156,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("THEME_VALUES = ['light', 'dark']", body)
         self.assertIn("THEME_VALUES.includes(value)", body)
         self.assertIn("localStorage.getItem(THEME_STORAGE_KEY)", body)
+        self.assertIn("prefers-color-scheme: dark", body)
         self.assertIn("prefers-color-scheme: light", body)
         self.assertIn("data-bs-theme", body)
 

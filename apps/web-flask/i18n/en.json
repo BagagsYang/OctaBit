@@ -15,6 +15,7 @@
   "settings.theme": "Theme",
   "settings.theme_light": "Light",
   "settings.theme_dark": "Dark",
+  "settings.theme_system": "System",
   "files.operations": "File operations",
   "files.upload": "Upload MIDI File",
   "queue.title": "Current File(s)",

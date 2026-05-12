@@ -15,6 +15,7 @@
   "settings.theme": "Thème",
   "settings.theme_light": "Clair",
   "settings.theme_dark": "Sombre",
+  "settings.theme_system": "Système",
   "files.operations": "Opérations de fichiers",
   "files.upload": "Importer un fichier MIDI",
   "queue.title": "Fichier(s) actuel(s)",

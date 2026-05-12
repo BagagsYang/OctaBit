@@ -115,6 +115,14 @@
     box-sizing: border-box;
 }
 
+.theme-change-instant,
+.theme-change-instant *,
+.theme-change-instant *::before,
+.theme-change-instant *::after {
+    transition: none !important;
+    animation: none !important;
+}
+
 html,
 body {
     min-height: 100%;
@@ -344,7 +352,7 @@ input:focus-visible,
 
 .theme-choice-group {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
 }
 

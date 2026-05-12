@@ -15,6 +15,7 @@
   "settings.theme": "主题",
   "settings.theme_light": "浅色",
   "settings.theme_dark": "深色",
+  "settings.theme_system": "系统",
   "files.operations": "文件操作",
   "files.upload": "上传 MIDI 文件",
   "queue.title": "当前文件",

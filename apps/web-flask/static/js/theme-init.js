@@ -17,15 +17,27 @@
     }
 
     function systemTheme() {
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        if (!window.matchMedia) {
+            return 'dark';
+        }
+
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
             return 'light';
         }
+
         return 'dark';
     }
 
     function applyTheme(theme) {
         const nextTheme = isThemeValue(theme) ? theme : systemTheme();
+        htmlElement.classList.add('theme-change-instant');
         htmlElement.setAttribute('data-bs-theme', nextTheme);
+        void htmlElement.offsetHeight;
+        htmlElement.classList.remove('theme-change-instant');
         return nextTheme;
     }
 

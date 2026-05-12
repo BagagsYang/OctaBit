@@ -121,19 +121,40 @@
         }
     }
 
+    function clearStoredTheme() {
+        try {
+            localStorage.removeItem(THEME_STORAGE_KEY);
+        } catch (error) {
+            console.warn('Failed to clear theme preference.', error);
+        }
+    }
+
     function systemTheme() {
         if (typeof themeController.systemTheme === 'function') {
             return themeController.systemTheme();
         }
 
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        if (!window.matchMedia) {
+            return 'dark';
+        }
+
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
             return 'light';
         }
+
         return 'dark';
     }
 
     function resolvedTheme() {
         return storedTheme() || systemTheme();
+    }
+
+    function isFollowingSystemTheme() {
+        return !storedTheme();
     }
 
     function applyTheme(theme) {
@@ -142,13 +163,19 @@
         }
 
         const nextTheme = isThemeValue(theme) ? theme : systemTheme();
+        htmlElement.classList.add('theme-change-instant');
         htmlElement.setAttribute('data-bs-theme', nextTheme);
+        void htmlElement.offsetHeight;
+        htmlElement.classList.remove('theme-change-instant');
         return nextTheme;
     }
 
     function syncThemeChoices(theme = resolvedTheme()) {
+        const followsSystemTheme = isFollowingSystemTheme();
         themeChoiceInputs.forEach((input) => {
-            input.checked = input.value === theme;
+            input.checked = followsSystemTheme
+                ? input.value === 'system'
+                : input.value === theme;
         });
     }
 
@@ -165,6 +192,12 @@
 
         applyTheme(theme);
         syncThemeChoices(theme);
+    }
+
+    function followSystemTheme() {
+        clearStoredTheme();
+        const nextTheme = applyTheme();
+        syncThemeChoices(nextTheme);
     }
 
     let settingsReturnFocus = null;
@@ -213,26 +246,33 @@
 
     themeChoiceInputs.forEach((input) => {
         input.addEventListener('change', () => {
-            if (input.checked) {
+            if (input.checked && input.value === 'system') {
+                followSystemTheme();
+            } else if (input.checked) {
                 saveTheme(input.value);
             }
         });
     });
 
     if (window.matchMedia) {
-        const systemThemeQuery = window.matchMedia('(prefers-color-scheme: light)');
+        const systemThemeQueries = [
+            window.matchMedia('(prefers-color-scheme: dark)'),
+            window.matchMedia('(prefers-color-scheme: light)'),
+        ];
         const syncSystemTheme = () => {
-            if (!storedTheme()) {
-                const nextTheme = applyTheme(systemTheme());
+            if (isFollowingSystemTheme()) {
+                const nextTheme = applyTheme();
                 syncThemeChoices(nextTheme);
             }
         };
 
-        if (typeof systemThemeQuery.addEventListener === 'function') {
-            systemThemeQuery.addEventListener('change', syncSystemTheme);
-        } else if (typeof systemThemeQuery.addListener === 'function') {
-            systemThemeQuery.addListener(syncSystemTheme);
-        }
+        systemThemeQueries.forEach((systemThemeQuery) => {
+            if (typeof systemThemeQuery.addEventListener === 'function') {
+                systemThemeQuery.addEventListener('change', syncSystemTheme);
+            } else if (typeof systemThemeQuery.addListener === 'function') {
+                systemThemeQuery.addListener(syncSystemTheme);
+            }
+        });
     }
 
     languageSelect.addEventListener('change', async () => {
