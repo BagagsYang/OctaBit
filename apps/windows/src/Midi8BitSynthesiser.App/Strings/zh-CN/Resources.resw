@@ -76,7 +76,7 @@
     <value>选择导出采样率。输出命名与现有应用保持一致。</value>
   </data>
   <data name="MainWindowTitle" xml:space="preserve">
-    <value>MIDI-8bit Synthesiser</value>
+    <value>OctaBit</value>
   </data>
   <data name="ClearQueueDialogTitle" xml:space="preserve">
     <value>清空整个队列？</value>
@@ -172,7 +172,7 @@
     <value>音量：{0:F1}</value>
   </data>
   <data name="CompatibilityWindowTitle" xml:space="preserve">
-    <value>MIDI-8bit Synthesiser 兼容性检查</value>
+    <value>OctaBit 兼容性检查</value>
   </data>
   <data name="CompatibilityWindowClose" xml:space="preserve">
     <value>关闭</value>

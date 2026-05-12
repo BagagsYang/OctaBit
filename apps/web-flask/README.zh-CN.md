@@ -2,7 +2,7 @@
 
 Language/语言: [English](./README.md) | 简体中文
 
-此目录包含通过浏览器分发的 MIDI-8bit Synthesiser 主要实现。
+此目录包含通过浏览器分发的 OctaBit 主要实现。该服务的公开站点是 `https://octabit.cc`。
 
 ## 职责
 

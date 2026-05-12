@@ -1,6 +1,8 @@
-MIDI-8BIT SYNTHESISER USER GUIDE
+OCTABIT USER GUIDE
 
-This guide covers the Flask/browser version of the MIDI-8bit Synthesiser.
+This guide covers the Flask/browser version of OctaBit.
+
+Official site: https://octabit.cc
 
 Project layout:
 - `apps/web-flask/` contains the current active browser interface and web service.
@@ -41,7 +43,7 @@ Important:
 - Mix up to 4 waveform layers.
 - Preview each waveform layer directly inside the app.
 - Choose the sample rate before exporting.
-- When you click export, the app asks for one output folder and then processes the queue sequentially.
+- When you click export, OctaBit processes the queue and downloads each ready WAV file.
 
 Output naming:
 - Single-layer export: `<original>_<wave>.wav`

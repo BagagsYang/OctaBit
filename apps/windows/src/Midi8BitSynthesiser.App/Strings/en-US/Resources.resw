@@ -76,7 +76,7 @@
     <value>Choose the export sample rate. Output naming stays aligned with the existing apps.</value>
   </data>
   <data name="MainWindowTitle" xml:space="preserve">
-    <value>MIDI-8bit Synthesiser</value>
+    <value>OctaBit</value>
   </data>
   <data name="ClearQueueDialogTitle" xml:space="preserve">
     <value>Clear the entire queue?</value>
@@ -172,7 +172,7 @@
     <value>Volume: {0:F1}</value>
   </data>
   <data name="CompatibilityWindowTitle" xml:space="preserve">
-    <value>MIDI-8bit Synthesiser Compatibility Check</value>
+    <value>OctaBit Compatibility Check</value>
   </data>
   <data name="CompatibilityWindowClose" xml:space="preserve">
     <value>Close</value>

@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ translations["meta.page_title"] }}</title>
+    <title>{{ translations["meta.site_title"] }}</title>
+    <meta name="description" content="{{ translations['meta.description'] }}">
+    <meta name="application-name" content="{{ translations['meta.site_name'] }}">
+    <link rel="canonical" href="https://octabit.cc/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ translations['meta.site_name'] }}">
+    <meta property="og:title" content="{{ translations['meta.site_title'] }}">
+    <meta property="og:description" content="{{ translations['meta.description'] }}">
+    <meta property="og:url" content="https://octabit.cc/">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ translations['meta.site_title'] }}">
+    <meta name="twitter:description" content="{{ translations['meta.description'] }}">
     <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -186,7 +197,7 @@
     </div>
 </div>
 
-<script id="midi8bit-config" type="application/json">{{ {
+<script id="octabit-config" type="application/json">{{ {
     "translations": translations,
     "currentLocale": locale,
     "defaultLocale": default_locale,

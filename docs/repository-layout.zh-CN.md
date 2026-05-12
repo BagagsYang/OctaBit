@@ -2,8 +2,8 @@
 
 Language/语言: [English](./repository-layout.md) | 简体中文
 
-该仓库是 MIDI-8bit Synthesiser 产品族的单体仓库。当前活跃目标是
-`apps/web-flask/` 中的公开 Flask/Gunicorn Web 服务。原生 macOS 和 Windows 应用已
+该仓库是 OctaBit 的单体仓库。OctaBit 是一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 工具。当前活跃目标是
+`apps/web-flask/` 中的公开 Flask/Gunicorn Web 服务，并面向 `octabit.cc` 发布。原生 macOS 和 Windows 应用已
 deprecated/paused，不再作为活跃开发目标；代码保留用于参考或未来可能的恢复。仓库还包含规范
 Python 渲染器、共享预览资源、部署文件和发布文档。
 

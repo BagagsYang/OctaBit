@@ -3,14 +3,14 @@ services:
     build:
       context: .
       dockerfile: deploy/web-flask/Dockerfile
-    image: midi8bit-web-flask:latest
+    image: octabit-web-flask:latest
     restart: unless-stopped
     environment:
       PORT: "8000"
       WEB_CONCURRENCY: "2"
       GUNICORN_TIMEOUT: "600"
       WEB_DOWNLOAD_TTL_SECONDS: "1800"
-      WEB_SYNTHESISE_JOB_ROOT: "/tmp/midi8bit-jobs"
+      WEB_SYNTHESISE_JOB_ROOT: "/tmp/octabit-jobs"
     ports:
       - "127.0.0.1:8000:8000"
     tmpfs:

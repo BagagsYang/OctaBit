@@ -42,7 +42,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertIn('<html lang="en"', response.get_data(as_text=True))
-        self.assertIn("MIDI-8BIT CONVERTER", response.get_data(as_text=True))
+        self.assertIn("OctaBit", response.get_data(as_text=True))
         self.assertIn("Current File(s)", response.get_data(as_text=True))
 
     def test_index_uses_browser_language_for_french(self):
@@ -80,7 +80,9 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.addCleanup(response.close)
 
         body = response.get_data(as_text=True)
-        self.assertIn("MIDI-8BIT CONVERTER", body)
+        self.assertIn("OctaBit", body)
+        self.assertIn("OctaBit – MIDI to 8-bit Converter", body)
+        self.assertIn("https://octabit.cc/", body)
         self.assertIn("Converted Files", body)
         self.assertIn('id="convertedList"', body)
         self.assertIn('id="settingsButton"', body)
@@ -96,7 +98,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("Light", body)
         self.assertIn("Dark", body)
         self.assertIn('class="module output-module"', body)
-        self.assertIn('id="midi8bit-config"', body)
+        self.assertIn('id="octabit-config"', body)
         self.assertIn("/static/js/theme-init.js", body)
         self.assertIn("/static/css/app.css", body)
         self.assertIn("/static/js/app.js", body)
@@ -118,7 +120,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
 
         body = response.get_data(as_text=True)
         self.assertEqual(200, response.status_code)
-        self.assertIn("document.getElementById('midi8bit-config')", body)
+        self.assertIn("document.getElementById('octabit-config')", body)
         self.assertIn("persistLanguageSwitchState", body)
         self.assertIn("restoreLanguageSwitchState", body)
         self.assertIn("pendingLanguageSwitchState", body)
@@ -128,7 +130,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("document.getElementById('settingsButton')", body)
         self.assertIn("document.getElementById('settingsDialog')", body)
         self.assertIn("input[name=\"themeChoice\"]", body)
-        self.assertIn("midi8bitTheme", body)
+        self.assertIn("octabitTheme", body)
         self.assertIn("localStorage.setItem(THEME_STORAGE_KEY, theme)", body)
         self.assertIn("prefers-color-scheme: light", body)
         self.assertNotIn("htmlElement.setAttribute('data-bs-theme', 'dark')", body)
@@ -141,8 +143,8 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
 
         body = response.get_data(as_text=True)
         self.assertEqual(200, response.status_code)
-        self.assertIn("midi8bitTheme", body)
-        self.assertIn("THEME_STORAGE_KEY = 'midi8bitTheme'", body)
+        self.assertIn("octabitTheme", body)
+        self.assertIn("THEME_STORAGE_KEY = 'octabitTheme'", body)
         self.assertIn("THEME_VALUES = ['light', 'dark']", body)
         self.assertIn("THEME_VALUES.includes(value)", body)
         self.assertIn("localStorage.getItem(THEME_STORAGE_KEY)", body)

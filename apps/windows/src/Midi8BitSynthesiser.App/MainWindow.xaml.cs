@@ -24,7 +24,7 @@ public sealed partial class MainWindow : Window
     internal MainWindow(ICompatibilityProbe compatibilityProbe, CompatibilityReport startupReport)
     {
         InitializeComponent();
-        Title = LocalizedStrings.Get("MainWindowTitle", "MIDI-8bit Synthesiser");
+        Title = LocalizedStrings.Get("MainWindowTitle", "OctaBit");
 
         _previewAudioPlayer = new PreviewAudioPlayer();
         ViewModel = new MainWindowViewModel(

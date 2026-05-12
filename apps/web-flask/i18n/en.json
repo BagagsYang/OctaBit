@@ -1,6 +1,9 @@
 {
-  "meta.page_title": "MIDI-8BIT CONVERTER",
-  "meta.subtitle": "Drop a MIDI file, tune the layers, export 8-bit audio.",
+  "meta.page_title": "OctaBit",
+  "meta.site_title": "OctaBit – MIDI to 8-bit Converter",
+  "meta.site_name": "OctaBit",
+  "meta.description": "A simple web tool for converting MIDI files into 8-bit style music.",
+  "meta.subtitle": "A simple web tool for converting MIDI files into 8-bit style music.",
   "toolbar.toggle_theme": "Toggle Light/Dark Mode",
   "toolbar.settings": "Settings",
   "toolbar.language_title": "Language",

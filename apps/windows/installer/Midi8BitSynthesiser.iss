@@ -1,4 +1,4 @@
-#define AppName "MIDI-8bit Synthesiser"
+#define AppName "OctaBit"
 #define AppExeName "Midi8BitSynthesiser.App.exe"
 
 #ifndef AppVersion
@@ -25,7 +25,7 @@ AppPublisher={#AppName}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 OutputDir=..\artifacts\installer
-OutputBaseFilename=Midi8BitSynthesiser-setup-{#AppVersion}
+OutputBaseFilename=OctaBit-setup-{#AppVersion}
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern

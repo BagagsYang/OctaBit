@@ -10,7 +10,7 @@ internal sealed class CompatibilityWindow : Window
     {
         Title = LocalizedStrings.Get(
             "CompatibilityWindowTitle",
-            "MIDI-8bit Synthesiser Compatibility Check");
+            "OctaBit Compatibility Check");
 
         var closeButton = new Button
         {

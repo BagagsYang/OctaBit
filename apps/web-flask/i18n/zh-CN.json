@@ -1,6 +1,9 @@
 {
-  "meta.page_title": "MIDI-8BIT CONVERTER",
-  "meta.subtitle": "拖入 MIDI 文件，调节波形层，然后导出 8-bit 音频。",
+  "meta.page_title": "OctaBit",
+  "meta.site_title": "OctaBit – MIDI to 8-bit Converter",
+  "meta.site_name": "OctaBit",
+  "meta.description": "一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 工具。",
+  "meta.subtitle": "一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 工具。",
   "toolbar.toggle_theme": "切换浅色/深色模式",
   "toolbar.settings": "设置",
   "toolbar.language_title": "语言",

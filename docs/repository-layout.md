@@ -2,12 +2,13 @@
 
 Language/语言: English | [简体中文](./repository-layout.zh-CN.md)
 
-This repository is a monorepo for the MIDI-8bit Synthesiser product family. The
-current active target is the public Flask/Gunicorn web service in
-`apps/web-flask/`. The native macOS and Windows apps are deprecated/paused, not
-actively developed, and retained for reference or possible future revival. The
-repository also contains the canonical Python renderer, shared preview assets,
-deployment files, and release documentation.
+This repository is a monorepo for OctaBit, a simple web tool for converting
+MIDI files into 8-bit style music. The current active target is the public
+Flask/Gunicorn web service in `apps/web-flask/`, published for `octabit.cc`.
+The native macOS and Windows apps are deprecated/paused, not actively developed,
+and retained for reference or possible future revival. The repository also
+contains the canonical Python renderer, shared preview assets, deployment files,
+and release documentation.
 
 ## Top-level map
 

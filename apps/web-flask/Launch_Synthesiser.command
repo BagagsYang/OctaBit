@@ -12,7 +12,7 @@ if [ ! -d "${PROJECT_ROOT}/.venv" ]; then
     exit 1
 fi
 
-echo "Starting browser MIDI Synthesiser..."
+echo "Starting OctaBit..."
 echo "------------------------------------------------"
 echo "WEB UI IS ACTIVE at http://127.0.0.1:5002"
 echo "------------------------------------------------"

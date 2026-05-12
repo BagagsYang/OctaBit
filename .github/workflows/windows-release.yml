@@ -69,7 +69,7 @@ jobs:
         run: |
           $artifactDir = "apps/windows/artifacts"
           New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
-          Compress-Archive -Path "apps/windows/artifacts/publish/win-x64/*" -DestinationPath "$artifactDir/Midi8BitSynthesiser-win-x64.zip" -Force
+          Compress-Archive -Path "apps/windows/artifacts/publish/win-x64/*" -DestinationPath "$artifactDir/OctaBit-win-x64.zip" -Force
 
       - name: Install Inno Setup
         shell: pwsh
@@ -91,8 +91,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Midi8BitSynthesiser-win-x64
+          name: OctaBit-win-x64
           path: |
-            apps/windows/artifacts/Midi8BitSynthesiser-win-x64.zip
+            apps/windows/artifacts/OctaBit-win-x64.zip
             apps/windows/artifacts/installer/*.exe
           if-no-files-found: error

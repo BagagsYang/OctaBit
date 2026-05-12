@@ -1,5 +1,5 @@
 (function () {
-    const THEME_STORAGE_KEY = 'midi8bitTheme';
+    const THEME_STORAGE_KEY = 'octabitTheme';
     const THEME_VALUES = ['light', 'dark'];
     const htmlElement = document.documentElement;
 
@@ -33,7 +33,7 @@
         return storedTheme() || systemTheme();
     }
 
-    window.midi8bitTheme = {
+    window.octabitTheme = {
         applyTheme,
         resolvedTheme,
         storedTheme,

@@ -35,7 +35,7 @@ LANGUAGE_FALLBACKS = {
     "zh": "zh-CN",
 }
 DEFAULT_DOWNLOAD_TTL_SECONDS = 30 * 60
-DEFAULT_JOB_ROOT = os.path.join(tempfile.gettempdir(), "midi8bit-jobs")
+DEFAULT_JOB_ROOT = os.path.join(tempfile.gettempdir(), "octabit-jobs")
 
 if PYTHON_RENDERER_DIR not in sys.path:
     sys.path.insert(0, PYTHON_RENDERER_DIR)

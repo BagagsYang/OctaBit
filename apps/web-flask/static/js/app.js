@@ -1,4 +1,4 @@
-    const appConfigElement = document.getElementById('midi8bit-config');
+    const appConfigElement = document.getElementById('octabit-config');
     const appConfig = JSON.parse(appConfigElement.textContent);
     const TRANSLATIONS = appConfig.translations;
     const CURRENT_LOCALE = appConfig.currentLocale;
@@ -6,11 +6,11 @@
     const SUPPORTED_LOCALES = appConfig.supportedLocales;
     const LOCALE_COOKIE_NAME = appConfig.localeCookieName;
     const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
-    const themeController = window.midi8bitTheme || {};
-    const THEME_STORAGE_KEY = themeController.storageKey || 'midi8bitTheme';
+    const themeController = window.octabitTheme || {};
+    const THEME_STORAGE_KEY = themeController.storageKey || 'octabitTheme';
     const THEME_VALUES = ['light', 'dark'];
     const LANGUAGE_SWITCH_STATE_KEY = 'pendingLanguageSwitchState';
-    const LANGUAGE_SWITCH_STATE_DB_NAME = 'midi8bitWebState';
+    const LANGUAGE_SWITCH_STATE_DB_NAME = 'octabitWebState';
     const LANGUAGE_SWITCH_STATE_STORE_NAME = 'pageState';
     const LANGUAGE_SWITCH_STATE_RECORD_KEY = 'pending-language-switch';
     const CONTROL_SWITCH_TRANSITION_MS = 200;
@@ -100,7 +100,7 @@
     const clearConvertedBtn = document.getElementById('clearConvertedBtn');
     const savedKeepQueuePreference = localStorage.getItem('keepQueueAfterSynth');
 
-    document.title = t('meta.page_title');
+    document.title = t('meta.site_title');
     htmlElement.setAttribute('lang', CURRENT_LOCALE);
     languageSelect.value = CURRENT_LOCALE;
 

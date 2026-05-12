@@ -1,6 +1,6 @@
-MIDI-8bit Synthesiser Windows Installer
+OctaBit Windows Installer
 
-This installer deploys the self-contained Windows release of MIDI-8bit Synthesiser.
+This installer deploys the self-contained Windows release of OctaBit.
 
 Important:
 - End users do not need the .NET SDK to run the installed application.

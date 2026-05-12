@@ -1,4 +1,4 @@
-# Windows app review report: MIDI-8bit Synthesiser
+# Windows app review report: OctaBit
 
 > Note: this report predates the repository reorganisation under `apps/`, `core/`, and `assets/`. Historical path references below still use the older layout.
 
