@@ -42,16 +42,19 @@
                 </div>
             </div>
             <div class="top-controls">
-                <select
-                    class="form-select form-select-sm theme-select"
-                    id="themeSelect"
-                    title="{{ translations['settings.theme'] }}"
-                    aria-label="{{ translations['settings.theme'] }}"
-                >
-                    <option value="system">{{ translations["settings.theme_system"] }}</option>
-                    <option value="light">{{ translations["settings.theme_light"] }}</option>
-                    <option value="dark">{{ translations["settings.theme_dark"] }}</option>
-                </select>
+                <span class="theme-select-frame">
+                    <span class="theme-select-icon" id="themeSelectIcon" aria-hidden="true"></span>
+                    <select
+                        class="form-select form-select-sm theme-select"
+                        id="themeSelect"
+                        title="{{ translations['settings.theme'] }}"
+                        aria-label="{{ translations['settings.theme'] }}"
+                    >
+                        <option value="system">{{ translations["settings.theme_system"] }}</option>
+                        <option value="light">{{ translations["settings.theme_light"] }}</option>
+                        <option value="dark">{{ translations["settings.theme_dark"] }}</option>
+                    </select>
+                </span>
                 <select
                     class="form-select form-select-sm language-select"
                     id="languageSelect"

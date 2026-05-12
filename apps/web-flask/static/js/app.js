@@ -87,6 +87,7 @@
     const queueEmpty = document.getElementById('queueEmpty');
     const processingStatus = document.getElementById('processingStatus');
     const themeSelect = document.getElementById('themeSelect');
+    const themeSelectIcon = document.getElementById('themeSelectIcon');
     const languageSelect = document.getElementById('languageSelect');
     const layersContainer = document.getElementById('layersContainer');
     const addLayerBtn = document.getElementById('addLayerBtn');
@@ -159,9 +160,35 @@
         return storedTheme() || 'system';
     }
 
+    function activeThemeValue() {
+        return htmlElement.getAttribute('data-bs-theme') || resolvedTheme();
+    }
+
+    function selectedThemeIconName() {
+        if (themeSelect.value === 'light') {
+            return 'sun';
+        }
+
+        if (themeSelect.value === 'dark') {
+            return 'moon-star';
+        }
+
+        return activeThemeValue() === 'light' ? 'sun' : 'moon-star';
+    }
+
+    function syncThemeSelectIcon() {
+        if (!themeSelectIcon) {
+            return;
+        }
+
+        themeSelectIcon.innerHTML = ICONS.svg(selectedThemeIconName(), 'lucide-icon theme-option-icon');
+    }
+
     function applyTheme(theme) {
         if (typeof themeController.applyTheme === 'function') {
-            return themeController.applyTheme(theme);
+            const nextTheme = themeController.applyTheme(theme);
+            syncThemeSelectIcon();
+            return nextTheme;
         }
 
         const nextTheme = isThemeValue(theme) ? theme : systemTheme();
@@ -169,11 +196,13 @@
         htmlElement.setAttribute('data-bs-theme', nextTheme);
         void htmlElement.offsetHeight;
         htmlElement.classList.remove('theme-change-instant');
+        syncThemeSelectIcon();
         return nextTheme;
     }
 
     function syncThemeSelect() {
         themeSelect.value = selectedThemeValue();
+        syncThemeSelectIcon();
     }
 
     function saveTheme(theme) {

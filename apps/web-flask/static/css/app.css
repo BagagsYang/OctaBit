@@ -245,6 +245,13 @@ input:focus-visible,
     flex: 0 0 auto;
 }
 
+.theme-select-frame {
+    position: relative;
+    display: block;
+    width: 136px;
+    flex: 0 0 136px;
+}
+
 .theme-select,
 .language-select,
 .control-select {
@@ -280,6 +287,30 @@ input:focus-visible,
 .language-select {
     min-width: 136px;
     font-size: 0.86rem;
+}
+
+.theme-select {
+    width: 100%;
+    min-width: 0;
+    padding-left: 36px;
+}
+
+.theme-select-icon {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    z-index: 2;
+    width: 15px;
+    height: 15px;
+    color: var(--muted-text);
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.theme-select-icon .lucide-icon {
+    width: 15px;
+    height: 15px;
+    color: currentColor;
 }
 
 .workspace-grid {
