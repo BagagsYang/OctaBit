@@ -11,13 +11,16 @@ redistribution, or ownership are marked for human or legal review.
 
 This audit covered the repository root and the current tracked file set, with
 local ignored build/cache folders inspected only to understand build outputs.
+The project direction is currently focused on the Flask/Gunicorn web service;
+native macOS and Windows release paths remain documented here only because the
+code and packaging files are retained for reference or possible future revival.
 
 Reviewed repository areas:
 
 - Root documentation and licence files: `README.md`, `README.zh-CN.md`,
   `LICENSE.md`, `AGENTS.md`, `.gitattributes`, `.gitignore`, `.dockerignore`.
-- App targets: `apps/web-flask/`, `apps/macos/`, `apps/windows/`, and the
-  placeholder `apps/desktop/`.
+- Current app target and retained app code: `apps/web-flask/`, `apps/macos/`,
+  `apps/windows/`, and the placeholder `apps/desktop/`.
 - Shared code and assets: `core/python-renderer/` and `assets/previews/`.
 - Documentation and generated review artefacts: `docs/`, tracked files under
   `output/pdf/`, and tracked files under `tmp/pdfs/`.
@@ -322,9 +325,10 @@ For binary, installer, app bundle, or Docker image distribution:
 
 - [ ] Generate a release-specific dependency inventory from actual resolved
       packages, not only direct requirement files.
-- [ ] Produce third-party notice files for each released artefact: source
-      archive, Docker image, macOS app bundle, Windows portable zip, and Windows
-      installer.
+- [ ] Produce third-party notice files for each released artefact. For the
+      current web focus, this means at least the source archive and Docker
+      image; native app bundles/installers need this review before any future
+      revival or redistribution.
 - [ ] Review `Microsoft.WindowsAppSDK` redistribution terms and AGPL
       compatibility before publishing the self-contained Windows release.
 - [ ] Inspect the generated Windows publish folder and installer for all
@@ -348,8 +352,9 @@ For binary, installer, app bundle, or Docker image distribution:
 - Re-run this audit whenever `requirements*.txt`, `.csproj`,
   `Directory.Packages.props`, Docker files, CI workflows, installer scripts,
   PyInstaller settings, or bundled assets change.
-- For active development, run a lightweight quarterly audit that compares the
-  current dependency manifests, package metadata, and release artefacts against
-  this document.
-- Treat the Windows self-contained app, macOS PyInstaller helper, and Docker
-  image as separate release artefacts with separate notice bundles.
+- For active web development, run a lightweight quarterly audit that compares
+  the current dependency manifests, package metadata, and release artefacts
+  against this document.
+- Treat the Docker image as the current active release artefact. Treat the
+  Windows self-contained app and macOS PyInstaller helper as separate release
+  artefacts if native work is revived.

@@ -2,10 +2,12 @@
 
 Language/语言: English | [简体中文](./repository-layout.zh-CN.md)
 
-This repository is a monorepo for the MIDI-8bit Synthesiser product family. It
-contains the public Flask web app, native macOS and Windows apps, the canonical
-Python renderer, shared preview assets, deployment files, and release
-documentation.
+This repository is a monorepo for the MIDI-8bit Synthesiser product family. The
+current active target is the public Flask/Gunicorn web service in
+`apps/web-flask/`. The native macOS and Windows apps are deprecated/paused, not
+actively developed, and retained for reference or possible future revival. The
+repository also contains the canonical Python renderer, shared preview assets,
+deployment files, and release documentation.
 
 ## Top-level map
 
@@ -14,14 +16,14 @@ documentation.
 | `AGENTS.md` | Repository instructions for coding agents and local workflows. |
 | `README.md`, `README.zh-CN.md` | Root project overview, setup notes, app entry points, and repository licence summary. |
 | `LICENSE.md` | Repository AGPL licence text. |
-| `apps/` | Platform app targets and the reserved desktop placeholder. |
+| `apps/` | Current web app target, retained native app code, and the reserved desktop placeholder. |
 | `core/python-renderer/` | Canonical Python MIDI-to-WAV renderer and parity reference. |
 | `assets/previews/` | Canonical waveform preview WAV files shared by the apps. |
 | `docs/` | Repository layout notes, licensing audit, and review reports. |
 | `deploy/web-flask/` | Docker deployment documentation and Dockerfile for the Flask web app. |
-| `.github/workflows/` | GitHub Actions workflow for Windows release builds. |
+| `.github/workflows/` | Retained GitHub Actions workflow for Windows release builds. |
 | `compose.web.yml` | Docker Compose entry point for the Flask web deployment. |
-| `global.json` | .NET SDK selection for the Windows solution. |
+| `global.json` | .NET SDK selection for the retained Windows solution. |
 | `.dockerignore`, `.gitignore`, `.gitattributes` | Repository packaging, ignore, and line-ending rules. |
 | `output/`, `tmp/` | Tracked historical generated review artefacts; both paths are ignored for future generated output. |
 
@@ -29,11 +31,11 @@ Local-only folders such as `.venv/`, build outputs, `.codex/`, `.sisyphus/`,
 `.DS_Store`, `__pycache__/`, `.xcodebuild/`, and app `build/` folders are not
 part of the maintained source layout.
 
-## App targets
+## Application targets
 
 ### `apps/web-flask/`
 
-Primary Flask/browser UI for the project.
+Current active Flask/browser UI and deployable web service for the project.
 
 - `app.py`: Flask entry point, upload handling, synthesis endpoints, preview
   routes, and server-side render job endpoints.
@@ -51,7 +53,9 @@ serves preview audio from `assets/previews/`.
 
 ### `apps/macos/`
 
-Native SwiftUI macOS app and Xcode project.
+Deprecated/paused native SwiftUI macOS app and Xcode project. This code is not
+the main development target; it is retained for reference or possible future
+revival while the project focuses on the web service.
 
 - `MIDI8BitSynthesiser.xcodeproj/`: Xcode project and shared scheme.
 - `MIDI8BitSynthesiser/`: SwiftUI app source.
@@ -67,7 +71,10 @@ helper for each queued MIDI file.
 
 ### `apps/windows/`
 
-Native WinUI 3 Windows app, C# renderer, tests, installer, and review tooling.
+Deprecated/paused native WinUI 3 Windows app, C# renderer, tests, installer,
+and review tooling. This code is not the main development target; it is
+retained for reference or possible future revival while the project focuses on
+the web service.
 
 - `Midi8BitSynthesiser.sln`: Windows solution.
 - `Directory.Packages.props`: central NuGet package versions.
@@ -84,12 +91,12 @@ Native WinUI 3 Windows app, C# renderer, tests, installer, and review tooling.
 - `README.md`, `README.zh-CN.md`, `REVIEWING.md`: Windows build, review, and
   release documentation.
 
-The Windows app has its own C# renderer and validates it against the Python
-reference renderer in parity tests. The app project links preview WAV files from
-the canonical `assets/previews/` folder for build and publish output. A
-byte-identical tracked copy also exists under
+The retained Windows app has its own C# renderer and validates it against the
+Python reference renderer in parity tests. The app project links preview WAV
+files from the canonical `assets/previews/` folder for build and publish
+output. A byte-identical tracked copy also exists under
 `src/Midi8BitSynthesiser.App/Assets/Previews/`, but the project file uses the
-shared asset folder as the current build source.
+shared asset folder as the build source.
 
 ### `apps/desktop/`
 
@@ -108,12 +115,13 @@ Canonical Python MIDI-to-WAV renderer.
 - `README.md`: renderer interface, layer schema, and dependency boundary.
 
 The renderer accepts platform-neutral file paths and waveform layer settings,
-then writes a WAV file to disk. Web and macOS call it directly; Windows uses it
-as the parity reference for the native C# renderer.
+then writes a WAV file to disk. The web app calls it directly. The retained
+macOS app also calls it directly, and the retained Windows app uses it as the
+parity reference for the native C# renderer.
 
 ### `assets/previews/`
 
-Canonical preview WAV assets used by the web, macOS, and Windows app paths.
+Canonical preview WAV assets used by the web app and retained native app paths.
 `assets/README.md` records their intended usage and provenance.
 
 ## Documentation and generated artefacts
@@ -154,7 +162,8 @@ Common checks:
 ./.venv/bin/python3 -m unittest discover -s core/python-renderer/tests
 ```
 
-Windows development uses .NET 8 and Python renderer dependencies:
+The paused Windows app can still be inspected with .NET 8 and Python renderer
+dependencies:
 
 ```powershell
 dotnet restore apps/windows/Midi8BitSynthesiser.sln
@@ -162,14 +171,15 @@ dotnet build apps/windows/Midi8BitSynthesiser.sln -c Release -p:Platform=x64
 dotnet test apps/windows/Midi8BitSynthesiser.sln -c Release -p:Platform=x64 --no-build
 ```
 
-Windows publishing uses:
+The retained Windows publishing path uses:
 
 ```powershell
 dotnet publish apps/windows/src/Midi8BitSynthesiser.App/Midi8BitSynthesiser.App.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64
 ```
 
-macOS builds run through Xcode with the `MIDI8BitSynthesiser` scheme. The Xcode
-build phase runs `apps/macos/macos/build_desktop_resources.sh`.
+The paused macOS app builds through Xcode with the `MIDI8BitSynthesiser`
+scheme. The Xcode build phase runs
+`apps/macos/macos/build_desktop_resources.sh`.
 
 The Flask Docker deployment uses:
 
@@ -191,13 +201,14 @@ project licence into the image.
   currently uses static local JavaScript/CSS plus external Bootstrap and Google
   Fonts links from the HTML template.
 - Docker deployment files are scoped to `apps/web-flask/`.
-- Native app packaging stays under the relevant app folder.
+- Retained native app packaging stays under the relevant app folder.
 
 ## Ownership boundaries
 
 - Shared renderer behaviour belongs in `core/python-renderer/`.
-- Platform-specific UI, launch, packaging, and release logic belongs under
-  `apps/`.
+- Web UI, launch, packaging, and release logic belongs under `apps/web-flask/`.
+- Retained native UI, launch, packaging, and release logic stays under the
+  relevant `apps/` folder.
 - Shared binary/media assets belong under `assets/`.
 - Repository-wide documentation, audits, and review notes belong under `docs/`.
 - Deployment-specific files belong under `deploy/` and root deployment entry

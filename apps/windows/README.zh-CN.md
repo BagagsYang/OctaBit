@@ -4,7 +4,11 @@ Language/语言: [English](./README.md) | 简体中文
 
 此目录包含 MIDI-8bit Synthesiser 的原生 Windows 桌面重写版本。
 
-## 职责
+## Deprecated/paused 状态
+
+此原生 Windows 应用已 deprecated/paused。它不是主要开发目标；项目当前聚焦于 Web 服务。代码保留用于参考。
+
+## 保留的职责
 
 - 面向 Windows 的 WinUI 3 桌面界面
 - 原生队列、层编辑、预览与导出工作流
@@ -83,7 +87,7 @@ apps/windows/scripts/create_review_bundle.sh
 
 ## 安装程序与可移植发布
 
-Windows 版本以两种形式发布：
+保留的 Windows 发布路径以两种形式发布：
 
 - 用于手动分发和评审的自包含可移植 zip 包
 - 面向普通最终用户的 Inno Setup 安装程序

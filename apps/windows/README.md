@@ -4,7 +4,13 @@ Language/语言: English | [简体中文](./README.zh-CN.md)
 
 This folder contains the native Windows desktop rewrite of the MIDI-8bit Synthesiser.
 
-## Responsibilities
+## Deprecation status
+
+This native Windows app is deprecated/paused. It is not the main development
+target; the project currently focuses on the web service. The code is retained
+for reference.
+
+## Retained responsibilities
 
 - WinUI 3 desktop interface for Windows
 - Native queue, layer editing, preview, and export workflow
@@ -83,7 +89,7 @@ The bundle includes:
 
 ## Installer and portable release
 
-The Windows release ships in two forms:
+The retained Windows release path ships in two forms:
 
 - a portable self-contained zip for manual distribution and review
 - an Inno Setup installer for ordinary end users

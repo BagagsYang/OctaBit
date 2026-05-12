@@ -3,9 +3,9 @@
 ## Repository overview
 This repository is a monorepo.
 
-- apps/web-flask: primary Flask web UI
-- apps/macos: native SwiftUI macOS app
-- apps/windows: native WinUI 3 Windows app
+- apps/web-flask: current active Flask web UI and deployable web service
+- apps/macos: deprecated/paused native SwiftUI macOS app, retained for reference
+- apps/windows: deprecated/paused native WinUI 3 Windows app, retained for reference
 - core/python-renderer: canonical Python renderer
 - assets/previews: shared waveform preview assets
 
@@ -51,11 +51,13 @@ On Windows, use the virtual environment's Python executable:
 - CLI supports input MIDI path, output WAV path, `--type`, `--duty`, `--rate`, and `--layers-json`.
 
 ### macOS
+- The native macOS app is deprecated/paused and is not the main development target.
 - Build through Xcode with `apps/macos/MIDI8BitSynthesiser.xcodeproj` and the `MIDI8BitSynthesiser` scheme.
 - The Xcode build phase runs `apps/macos/macos/build_desktop_resources.sh`.
 - TODO: Add a command-line `xcodebuild` workflow after it is verified in repo usage.
 
 ### Windows
+- The native Windows app is deprecated/paused and is not the main development target.
 - Preflight: `dotnet --info`, `py -3 --version`, `py -3 -c "import pretty_midi, numpy, scipy"`; if `py -3` is unavailable, use `python --version` and `python -c "import pretty_midi, numpy, scipy"` instead.
 - Reference renderer dependencies for parity tests: `py -3 -m pip install -r core/python-renderer/requirements.txt`; if `py -3` is unavailable, use `python -m pip install -r core/python-renderer/requirements.txt`.
 - Restore: `dotnet restore apps/windows/Midi8BitSynthesiser.sln`

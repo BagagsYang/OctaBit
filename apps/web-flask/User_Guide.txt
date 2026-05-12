@@ -3,8 +3,9 @@ MIDI-8BIT SYNTHESISER USER GUIDE
 This guide covers the Flask/browser version of the MIDI-8bit Synthesiser.
 
 Project layout:
-- `apps/web-flask/` contains the browser interface.
-- `apps/macos/` contains the native macOS application.
+- `apps/web-flask/` contains the current active browser interface and web service.
+- `apps/macos/` contains the deprecated/paused native macOS application for reference.
+- `apps/windows/` contains the deprecated/paused native Windows application for reference.
 - `core/python-renderer/` contains the shared Python synthesis engine.
 - `assets/previews/` contains the shared waveform preview WAV files.
 
@@ -66,8 +67,8 @@ A softer, hollow tone often used for basslines.
 ==================================================
 5. OTHER VARIANTS
 ==================================================
-- The native macOS version lives in `apps/macos/`.
-- The Windows desktop version lives in `apps/windows/`.
+- The deprecated/paused native macOS version lives in `apps/macos/`.
+- The deprecated/paused Windows desktop version lives in `apps/windows/`.
 - The shared synthesis engine lives in `core/python-renderer/`.
 - See the repository root `README.md` for the platform overview.
 

@@ -4,6 +4,10 @@ Language/语言: [English](./README.md) | 简体中文
 
 此目录包含原生 macOS 应用的打包说明和构建说明。
 
+## Deprecated/paused 状态
+
+此原生 macOS 应用已 deprecated/paused。它不是主要开发目标；项目当前聚焦于 Web 服务。代码保留用于参考。
+
 ## 构建
 
 1. 安装完整的 Xcode。

@@ -4,6 +4,12 @@ Language/语言: English | [简体中文](./README.zh-CN.md)
 
 This folder contains the native macOS app packaging and build notes.
 
+## Deprecation status
+
+This native macOS app is deprecated/paused. It is not the main development
+target; the project currently focuses on the web service. The code is retained
+for reference.
+
 ## Build
 
 1. Install full Xcode.
