@@ -913,7 +913,6 @@
                 <div class="layer-title-row">
                     <div>
                         <div class="layer-title">${t('layer.title', { index: layerIndex + 1 })}</div>
-                        ${layer.curveEnabled ? `<div class="layer-state">${t('layer.curve_active')}</div>` : ''}
                     </div>
                     <button
                         type="button"

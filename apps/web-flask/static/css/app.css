@@ -419,6 +419,7 @@ input:focus-visible,
     display: grid;
     gap: 12px;
     align-content: start;
+    min-width: 0;
 }
 
 .module {
@@ -798,6 +799,7 @@ input:focus-visible,
     display: grid;
     gap: 7px;
     margin-bottom: 10px;
+    min-width: 0;
 }
 
 .waveform-field .field-label {
@@ -996,6 +998,7 @@ input:focus-visible,
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
     max-width: 100%;
     color: var(--muted-text);
     cursor: pointer;
@@ -1140,6 +1143,24 @@ input:focus-visible,
 
 .text-muted {
     color: var(--muted-text) !important;
+}
+
+@media (max-width: 1180px) {
+    .layer-control-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .layer-volume-wide {
+        grid-column: auto;
+    }
+
+    .waveform-field .field-label {
+        height: auto;
+    }
+
+    .layer-curve-toggle {
+        padding-top: 0;
+    }
 }
 
 @media (max-width: 980px) {
