@@ -42,21 +42,16 @@
                 </div>
             </div>
             <div class="top-controls">
-                <button
-                    type="button"
-                    class="settings-btn"
-                    id="settingsButton"
-                    title="{{ translations['toolbar.settings'] }}"
-                    aria-label="{{ translations['toolbar.settings'] }}"
-                    aria-controls="settingsDialog"
-                    aria-haspopup="dialog"
-                    aria-expanded="false"
+                <select
+                    class="form-select form-select-sm theme-select"
+                    id="themeSelect"
+                    title="{{ translations['settings.theme'] }}"
+                    aria-label="{{ translations['settings.theme'] }}"
                 >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
-                        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2.05 2.05 0 0 1-2.9 2.9l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6V20a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.84.38l-.06.06a2.05 2.05 0 0 1-2.9-2.9l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H4a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.38-1.84l-.06-.06a2.05 2.05 0 0 1 2.9-2.9l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6V4a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.84-.38l.06-.06a2.05 2.05 0 0 1 2.9 2.9l-.06.06A1.7 1.7 0 0 0 19.4 9c.16.37.38.7.6 1h.1a2 2 0 0 1 0 4H20a1.7 1.7 0 0 0-.6 1Z"></path>
-                    </svg>
-                </button>
+                    <option value="system">{{ translations["settings.theme_system"] }}</option>
+                    <option value="light">{{ translations["settings.theme_light"] }}</option>
+                    <option value="dark">{{ translations["settings.theme_dark"] }}</option>
+                </select>
                 <select
                     class="form-select form-select-sm language-select"
                     id="languageSelect"
@@ -69,52 +64,6 @@
                 </select>
             </div>
         </header>
-
-        <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsDialogTitle">
-            <div class="settings-dialog-surface">
-                <div class="settings-dialog-header">
-                    <h2 class="settings-dialog-title" id="settingsDialogTitle">{{ translations["settings.title"] }}</h2>
-                    <button
-                        type="button"
-                        class="settings-close-btn"
-                        id="settingsCloseButton"
-                        aria-label="{{ translations['settings.close'] }}"
-                    >x</button>
-                </div>
-                <section class="settings-section" aria-labelledby="themeSettingsTitle">
-                    <h3 class="settings-section-title" id="themeSettingsTitle">{{ translations["settings.theme"] }}</h3>
-                    <div class="theme-choice-group" role="radiogroup" aria-labelledby="themeSettingsTitle">
-                        <label class="theme-choice">
-                            <input
-                                class="theme-choice-input"
-                                type="radio"
-                                name="themeChoice"
-                                value="light"
-                            >
-                            <span class="theme-choice-text">{{ translations["settings.theme_light"] }}</span>
-                        </label>
-                        <label class="theme-choice">
-                            <input
-                                class="theme-choice-input"
-                                type="radio"
-                                name="themeChoice"
-                                value="dark"
-                            >
-                            <span class="theme-choice-text">{{ translations["settings.theme_dark"] }}</span>
-                        </label>
-                        <label class="theme-choice">
-                            <input
-                                class="theme-choice-input"
-                                type="radio"
-                                name="themeChoice"
-                                value="system"
-                            >
-                            <span class="theme-choice-text">{{ translations["settings.theme_system"] }}</span>
-                        </label>
-                    </div>
-                </section>
-            </div>
-        </dialog>
 
         <form id="synthForm">
             <div class="workspace-grid">
@@ -213,6 +162,7 @@
     "supportedLocales": supported_locales,
     "localeCookieName": locale_cookie_name,
 } | tojson }}</script>
+<script src="{{ url_for('static', filename='js/lucide-icons.js') }}"></script>
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 
 </body>

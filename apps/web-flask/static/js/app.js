@@ -5,6 +5,7 @@
     const DEFAULT_LOCALE = appConfig.defaultLocale;
     const SUPPORTED_LOCALES = appConfig.supportedLocales;
     const LOCALE_COOKIE_NAME = appConfig.localeCookieName;
+    const ICONS = window.octabitLucideIcons || { svg: () => '' };
     const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
     const themeController = window.octabitTheme || {};
     const THEME_STORAGE_KEY = themeController.storageKey || 'octabitTheme';
@@ -85,11 +86,8 @@
     const queueCountAction = document.getElementById('queueCountAction');
     const queueEmpty = document.getElementById('queueEmpty');
     const processingStatus = document.getElementById('processingStatus');
+    const themeSelect = document.getElementById('themeSelect');
     const languageSelect = document.getElementById('languageSelect');
-    const settingsButton = document.getElementById('settingsButton');
-    const settingsDialog = document.getElementById('settingsDialog');
-    const settingsCloseButton = document.getElementById('settingsCloseButton');
-    const themeChoiceInputs = Array.from(document.querySelectorAll('input[name="themeChoice"]'));
     const layersContainer = document.getElementById('layersContainer');
     const addLayerBtn = document.getElementById('addLayerBtn');
     const removeLayerBtn = document.getElementById('removeLayerBtn');
@@ -157,6 +155,10 @@
         return !storedTheme();
     }
 
+    function selectedThemeValue() {
+        return storedTheme() || 'system';
+    }
+
     function applyTheme(theme) {
         if (typeof themeController.applyTheme === 'function') {
             return themeController.applyTheme(theme);
@@ -170,13 +172,8 @@
         return nextTheme;
     }
 
-    function syncThemeChoices(theme = resolvedTheme()) {
-        const followsSystemTheme = isFollowingSystemTheme();
-        themeChoiceInputs.forEach((input) => {
-            input.checked = followsSystemTheme
-                ? input.value === 'system'
-                : input.value === theme;
-        });
+    function syncThemeSelect() {
+        themeSelect.value = selectedThemeValue();
     }
 
     function saveTheme(theme) {
@@ -191,67 +188,25 @@
         }
 
         applyTheme(theme);
-        syncThemeChoices(theme);
+        syncThemeSelect();
     }
 
     function followSystemTheme() {
         clearStoredTheme();
-        const nextTheme = applyTheme();
-        syncThemeChoices(nextTheme);
+        applyTheme();
+        syncThemeSelect();
     }
 
-    let settingsReturnFocus = null;
-
-    function restoreSettingsFocus() {
-        settingsButton.setAttribute('aria-expanded', 'false');
-        if (settingsReturnFocus && document.contains(settingsReturnFocus)) {
-            settingsReturnFocus.focus();
-        }
-        settingsReturnFocus = null;
-    }
-
-    function openSettingsDialog() {
-        settingsReturnFocus = document.activeElement || settingsButton;
-        syncThemeChoices(resolvedTheme());
-        settingsButton.setAttribute('aria-expanded', 'true');
-
-        if (typeof settingsDialog.showModal === 'function') {
-            settingsDialog.showModal();
-        } else {
-            settingsDialog.setAttribute('open', '');
-        }
-    }
-
-    function closeSettingsDialog() {
-        if (typeof settingsDialog.close === 'function' && settingsDialog.open) {
-            settingsDialog.close();
-        } else {
-            settingsDialog.removeAttribute('open');
-            restoreSettingsFocus();
-        }
-    }
-
-    const currentTheme = applyTheme(resolvedTheme());
-    syncThemeChoices(currentTheme);
+    applyTheme(resolvedTheme());
+    syncThemeSelect();
     keepQueueToggle.checked = savedKeepQueuePreference === 'true';
 
-    settingsButton.addEventListener('click', openSettingsDialog);
-    settingsCloseButton.addEventListener('click', closeSettingsDialog);
-    settingsDialog.addEventListener('close', restoreSettingsFocus);
-    settingsDialog.addEventListener('click', (event) => {
-        if (event.target === settingsDialog) {
-            closeSettingsDialog();
+    themeSelect.addEventListener('change', () => {
+        if (themeSelect.value === 'system') {
+            followSystemTheme();
+        } else {
+            saveTheme(themeSelect.value);
         }
-    });
-
-    themeChoiceInputs.forEach((input) => {
-        input.addEventListener('change', () => {
-            if (input.checked && input.value === 'system') {
-                followSystemTheme();
-            } else if (input.checked) {
-                saveTheme(input.value);
-            }
-        });
     });
 
     if (window.matchMedia) {
@@ -261,8 +216,8 @@
         ];
         const syncSystemTheme = () => {
             if (isFollowingSystemTheme()) {
-                const nextTheme = applyTheme();
-                syncThemeChoices(nextTheme);
+                applyTheme();
+                syncThemeSelect();
             }
         };
 
@@ -542,7 +497,7 @@
             const removeButton = document.createElement('button');
             removeButton.type = 'button';
             removeButton.className = 'remove-btn';
-            removeButton.textContent = 'x';
+            removeButton.innerHTML = ICONS.svg('x');
             removeButton.setAttribute('aria-label', t('queue.remove_file', { filename: file.name }));
             removeButton.addEventListener('click', () => window.removeFromQueue(index));
 
@@ -960,7 +915,7 @@
                         onclick="playPreview(${layerIndex})"
                         title="${t('layer.play_preview')}"
                         aria-label="${t('layer.play_preview')}"
-                    ><span class="play-icon" aria-hidden="true"></span></button>
+                    >${ICONS.svg('play')}</button>
                 </div>
                 <div class="layer-control-grid">
                     <div class="field-block waveform-field">

@@ -177,6 +177,7 @@ checked for the specific named resources.
 | --- | --- | --- | --- |
 | Bootstrap CSS | `bootstrap@5.3.0` from jsDelivr/npm | MIT npm metadata | Loaded from CDN at runtime; no local Bootstrap files are bundled. |
 | IBM Plex Sans and IBM Plex Mono | Google Fonts CSS loading IBM-hosted font family names | SIL Open Font License 1.1 from IBM Plex upstream licence | Fonts are fetched from Google-hosted URLs at runtime; no font files are checked in. |
+| Lucide inline SVG icons | Copied SVG path data for `play` and `x` from the Lucide icon set | ISC licence from <https://lucide.dev/license> and <https://github.com/lucide-icons/lucide/blob/main/LICENSE>; `x` is also listed as Feather-derived under MIT | Vendored inline in `apps/web-flask/static/js/lucide-icons.js`; no npm package, CDN, or build pipeline is used. |
 
 If these resources are vendored later, include their licence texts and notices
 in the repository and release artefacts. If they remain CDN resources, review
@@ -263,10 +264,14 @@ Requires human review:
 
 ### Copied or vendored code
 
-No separate vendored source tree, copied third-party source file, checked-in
-font file, checked-in icon file, checked-in JavaScript package, checked-in MIDI
-example file, or checked-in image asset was found outside the generated review
-artefacts listed above.
+The Flask web UI vendors copied Lucide SVG path data in
+`apps/web-flask/static/js/lucide-icons.js`; its source and licence notices are
+recorded in the file comment and in the web resource table above.
+
+No separate vendored source tree, checked-in font file, checked-in standalone
+icon file, checked-in JavaScript package, checked-in MIDI example file, or
+checked-in image asset was found outside the generated review artefacts listed
+above.
 
 ## Potential licence risks or unknowns
 
@@ -320,6 +325,9 @@ For binary, installer, app bundle, or Docker image distribution:
   for distributed container images.
 - Include Bootstrap MIT and IBM Plex OFL-1.1 notices if those assets are
   vendored into the repository or release artefacts.
+- Include Lucide ISC notice, and the Feather MIT notice for Feather-derived
+  glyphs such as `x`, when distributing source or release artefacts that contain
+  the inline SVG icon helper.
 
 ## Release-readiness checklist
 
