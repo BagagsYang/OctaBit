@@ -5,6 +5,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import pretty_midi
 
@@ -379,34 +380,63 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual("expired", download_response.get_json()["status"])
 
     def test_synthesise_job_reports_failed_status(self):
-        response = self.client.post(
-            "/synthesise/jobs",
-            data={
-                "rate": "16000",
-                "layers_json": json.dumps([{
-                    "type": "sine",
-                    "duty": 0.5,
-                    "volume": 1.0,
-                    "frequency_curve": [
-                        {"frequency_hz": 440.0, "gain_db": 0.0},
-                        {"frequency_hz": 440.0, "gain_db": -6.0},
-                    ],
-                }]),
-                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
-            },
-            content_type="multipart/form-data",
-        )
-        self.addCleanup(response.close)
+        with self.assertLogs(web_app.app.logger.name, level="WARNING") as logs:
+            response = self.client.post(
+                "/synthesise/jobs",
+                data={
+                    "rate": "16000",
+                    "layers_json": json.dumps([{
+                        "type": "sine",
+                        "duty": 0.5,
+                        "volume": 1.0,
+                        "frequency_curve": [
+                            {"frequency_hz": 440.0, "gain_db": 0.0},
+                            {"frequency_hz": 440.0, "gain_db": -6.0},
+                        ],
+                    }]),
+                    "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+                },
+                content_type="multipart/form-data",
+            )
+            self.addCleanup(response.close)
 
         self.assertEqual(202, response.status_code)
         payload = response.get_json()
         self.assertEqual("failed", payload["status"])
         self.assertIn("strictly increasing", payload["error"])
+        self.assertTrue(any("strictly increasing" in message for message in logs.output))
 
         download_response = self.client.get(f"/synthesise/jobs/{payload['job_id']}/download")
         self.addCleanup(download_response.close)
         self.assertEqual(400, download_response.status_code)
         self.assertEqual("failed", download_response.get_json()["status"])
+
+    def test_synthesise_job_reports_exception_type_for_empty_error(self):
+        with (
+            mock.patch.object(web_app, "_render_uploaded_wav", side_effect=MemoryError()),
+            self.assertLogs(web_app.app.logger.name, level="ERROR") as logs,
+        ):
+            response = self.client.post(
+                "/synthesise/jobs",
+                data={
+                    "rate": "16000",
+                    "layers_json": json.dumps([{
+                        "type": "sine",
+                        "duty": 0.5,
+                        "volume": 1.0,
+                        "frequency_curve": [],
+                    }]),
+                    "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+                },
+                content_type="multipart/form-data",
+            )
+            self.addCleanup(response.close)
+
+        self.assertEqual(202, response.status_code)
+        payload = response.get_json()
+        self.assertEqual("failed", payload["status"])
+        self.assertEqual("MemoryError: synthesis ran out of memory", payload["error"])
+        self.assertTrue(any("Synthesis job" in message for message in logs.output))
 
     def test_synthesise_job_missing_or_expired_returns_expired(self):
         missing_response = self.client.get(f"/synthesise/jobs/{'0' * 32}")

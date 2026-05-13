@@ -309,6 +309,16 @@ def _update_job_status(job_id, **updates):
     _write_job_metadata(job_id, metadata)
 
 
+def _job_error_message(exc):
+    if isinstance(exc, MemoryError):
+        return "MemoryError: synthesis ran out of memory"
+
+    message = str(exc).strip()
+    if message:
+        return message
+    return exc.__class__.__name__
+
+
 def _run_synthesise_job(job_id, input_path, form_payload, uploaded_filename):
     output_path = os.path.join(_job_dir(job_id), "output.wav")
     _update_job_status(job_id, status="rendering")
@@ -329,11 +339,15 @@ def _run_synthesise_job(job_id, input_path, form_payload, uploaded_filename):
             expires_at=now + _get_download_ttl_seconds(),
         )
     except Exception as exc:
+        if isinstance(exc, ValueError):
+            app.logger.warning("Synthesis job %s failed: %s", job_id, exc)
+        else:
+            app.logger.exception("Synthesis job %s failed", job_id)
         now = time.time()
         _update_job_status(
             job_id,
             status="failed",
-            error=str(exc),
+            error=_job_error_message(exc),
             expires_at=now + _get_download_ttl_seconds(),
         )
     finally:

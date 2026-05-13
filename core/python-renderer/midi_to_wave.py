@@ -30,6 +30,8 @@ MIN_CURVE_GAIN_DB = -36.0
 MAX_CURVE_GAIN_DB = 12.0
 MAX_CURVE_POINTS = 8
 CURVE_FREQUENCY_TOLERANCE_HZ = 1e-6
+AUDIO_WORKING_DTYPE = np.float32
+NORMALISED_PEAK = 0.89
 
 
 def _parse_finite_number(raw_value, field_label):
@@ -227,26 +229,37 @@ def evaluate_frequency_curve_gain_db(curve_points, frequency_hz):
     return curve_points[-1]["gain_db"]
 
 
-def generate_waveform(freq, duration, sample_rate, wave_type='pulse', duty_cycle=0.5):
+def generate_waveform(
+    freq,
+    duration,
+    sample_rate,
+    wave_type='pulse',
+    duty_cycle=0.5,
+    dtype=AUDIO_WORKING_DTYPE,
+    sample_count=None,
+):
     """Generates various audio waveforms."""
-    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
+    dtype = np.dtype(dtype)
+    if sample_count is None:
+        sample_count = int(sample_rate * duration)
+    t = np.arange(sample_count, dtype=dtype) / dtype.type(sample_rate)
     
     if wave_type == 'sine':
-        return np.sin(2 * np.pi * freq * t)
+        return np.sin(2 * np.pi * freq * t).astype(dtype, copy=False)
     
     elif wave_type == 'sawtooth':
         # Linear ramp from -1 to 1
-        return 2.0 * (t * freq % 1.0) - 1.0
+        return (2.0 * (t * freq % 1.0) - 1.0).astype(dtype, copy=False)
     
     elif wave_type == 'triangle':
         # Absolute value of a sawtooth
-        return 2.0 * np.abs(2.0 * (t * freq % 1.0) - 1.0) - 1.0
+        return (2.0 * np.abs(2.0 * (t * freq % 1.0) - 1.0) - 1.0).astype(dtype, copy=False)
     
     elif wave_type == 'pulse':
         # Default square wave if duty is 0.5
-        return np.where((t * freq) % 1.0 < duty_cycle, 1.0, -1.0)
+        return np.where((t * freq) % 1.0 < duty_cycle, 1.0, -1.0).astype(dtype, copy=False)
     
-    return np.zeros_like(t)
+    return np.zeros_like(t, dtype=dtype)
 
 
 def apply_envelope(waveform, sample_rate, attack=0.005, release=0.005):
@@ -254,10 +267,21 @@ def apply_envelope(waveform, sample_rate, attack=0.005, release=0.005):
     if len(waveform) == 0: return waveform
     attack_samples = min(int(attack * sample_rate), len(waveform) // 2)
     release_samples = min(int(release * sample_rate), len(waveform) - attack_samples)
-    envelope = np.ones(len(waveform))
-    if attack_samples > 0: envelope[:attack_samples] = np.linspace(0, 1, attack_samples)
-    if release_samples > 0: envelope[-release_samples:] = np.linspace(1, 0, release_samples)
-    return waveform * envelope
+    if attack_samples > 0:
+        waveform[:attack_samples] *= np.linspace(
+            0,
+            1,
+            attack_samples,
+            dtype=waveform.dtype,
+        )
+    if release_samples > 0:
+        waveform[-release_samples:] *= np.linspace(
+            1,
+            0,
+            release_samples,
+            dtype=waveform.dtype,
+        )
+    return waveform
 
 
 def midi_to_audio(midi_path, output_path, sample_rate=48000, layers=None):
@@ -266,7 +290,7 @@ def midi_to_audio(midi_path, output_path, sample_rate=48000, layers=None):
     midi_data = pretty_midi.PrettyMIDI(midi_path)
     total_time = midi_data.get_end_time()
     total_samples = int(np.ceil(total_time * sample_rate))
-    audio_buffer = np.zeros(total_samples, dtype=np.float64)
+    audio_buffer = np.zeros(total_samples, dtype=AUDIO_WORKING_DTYPE)
 
     if total_samples == 0:
         wavfile.write(output_path, sample_rate, np.zeros(0, dtype=np.int16))
@@ -286,8 +310,8 @@ def midi_to_audio(midi_path, output_path, sample_rate=48000, layers=None):
             note_volume = note.velocity / 127.0
             
             mixed_note_waveform = np.zeros(
-                int(sample_rate * duration),
-                dtype=np.float64,
+                note_sample_length,
+                dtype=AUDIO_WORKING_DTYPE,
             )
             
             for layer in layers:
@@ -305,8 +329,9 @@ def midi_to_audio(midi_path, output_path, sample_rate=48000, layers=None):
                     sample_rate,
                     layer["type"],
                     layer["duty"],
+                    sample_count=note_sample_length,
                 )
-                mixed_note_waveform += layer_wave * effective_volume
+                mixed_note_waveform += layer_wave * AUDIO_WORKING_DTYPE(effective_volume)
                 
             mixed_note_waveform = apply_envelope(mixed_note_waveform, sample_rate)
             end_sample = start_sample + len(mixed_note_waveform)
@@ -317,11 +342,12 @@ def midi_to_audio(midi_path, output_path, sample_rate=48000, layers=None):
             else:
                 audio_buffer[start_sample:end_sample] += mixed_note_waveform * note_volume
 
-    max_val = np.max(np.abs(audio_buffer))
+    max_val = max(abs(float(np.min(audio_buffer))), abs(float(np.max(audio_buffer))))
     if max_val > 0:
-        audio_buffer = (audio_buffer / max_val) * 0.89
+        audio_buffer *= NORMALISED_PEAK / max_val
 
-    wavfile.write(output_path, sample_rate, (audio_buffer * 32767).astype(np.int16))
+    np.multiply(audio_buffer, 32767.0, out=audio_buffer, casting="unsafe")
+    wavfile.write(output_path, sample_rate, audio_buffer.astype(np.int16))
 
 def normalise_runtime_layers(layers):
     if not layers:
