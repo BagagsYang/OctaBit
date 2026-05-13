@@ -64,5 +64,6 @@
   "curve.points_summary": "Curve points: {count}. Selected: {frequency} / {gain}",
   "curve.aria_label": "Frequency gain editor for layer {index}",
   "errors.no_midi_file_uploaded": "No MIDI file uploaded",
-  "errors.no_selected_file": "No selected file"
+  "errors.no_selected_file": "No selected file",
+  "errors.empty_midi_file": "Uploaded MIDI file is empty. Re-add the original file and try again."
 }

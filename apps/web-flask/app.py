@@ -125,6 +125,13 @@ def _load_translations(locale):
     return translations
 
 
+def _load_all_translations():
+    return {
+        locale: _load_translations(locale)
+        for locale in SUPPORTED_LOCALES
+    }
+
+
 def _resolve_locale():
     requested_locale = _normalise_locale(request.args.get("lang"))
     if requested_locale:
@@ -183,6 +190,8 @@ def _render_uploaded_wav(uploaded_file, form, output_wav_path):
     temp_midi.close()
     try:
         uploaded_file.save(temp_midi.name)
+        if os.path.getsize(temp_midi.name) == 0:
+            raise ValueError("Uploaded MIDI file is empty.")
         midi_to_wave.midi_to_audio(
             temp_midi.name,
             output_wav_path,
@@ -312,6 +321,8 @@ def _update_job_status(job_id, **updates):
 def _job_error_message(exc):
     if isinstance(exc, MemoryError):
         return "MemoryError: synthesis ran out of memory"
+    if isinstance(exc, EOFError):
+        return "Uploaded MIDI file is empty or incomplete."
 
     message = str(exc).strip()
     if message:
@@ -339,7 +350,7 @@ def _run_synthesise_job(job_id, input_path, form_payload, uploaded_filename):
             expires_at=now + _get_download_ttl_seconds(),
         )
     except Exception as exc:
-        if isinstance(exc, ValueError):
+        if isinstance(exc, (EOFError, ValueError)):
             app.logger.warning("Synthesis job %s failed: %s", job_id, exc)
         else:
             app.logger.exception("Synthesis job %s failed", job_id)
@@ -379,6 +390,7 @@ def index():
         locale=locale,
         locale_cookie_name=LOCALE_COOKIE_NAME,
         supported_locales=SUPPORTED_LOCALES,
+        translations_by_locale=_load_all_translations(),
         translations=translations,
     ))
 
@@ -458,6 +470,9 @@ def create_synthesise_job():
 
     try:
         file.save(input_path)
+        if os.path.getsize(input_path) == 0:
+            _delete_job(job_id)
+            return jsonify({"error": translations["errors.empty_midi_file"]}), 400
         _write_job_metadata(job_id, _initial_job_metadata(job_id, file.filename))
         _start_synthesise_job(job_id, input_path, request.form.to_dict(flat=True), file.filename)
     except ValueError as exc:

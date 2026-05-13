@@ -1,7 +1,8 @@
     const appConfigElement = document.getElementById('octabit-config');
     const appConfig = JSON.parse(appConfigElement.textContent);
-    const TRANSLATIONS = appConfig.translations;
-    const CURRENT_LOCALE = appConfig.currentLocale;
+    const TRANSLATIONS_BY_LOCALE = appConfig.translationsByLocale || {};
+    let TRANSLATIONS = appConfig.translations;
+    let CURRENT_LOCALE = appConfig.currentLocale;
     const DEFAULT_LOCALE = appConfig.defaultLocale;
     const SUPPORTED_LOCALES = appConfig.supportedLocales;
     const LOCALE_COOKIE_NAME = appConfig.localeCookieName;
@@ -10,10 +11,6 @@
     const themeController = window.octabitTheme || {};
     const THEME_STORAGE_KEY = themeController.storageKey || 'octabitTheme';
     const THEME_VALUES = ['light', 'dark'];
-    const LANGUAGE_SWITCH_STATE_KEY = 'pendingLanguageSwitchState';
-    const LANGUAGE_SWITCH_STATE_DB_NAME = 'octabitWebState';
-    const LANGUAGE_SWITCH_STATE_STORE_NAME = 'pageState';
-    const LANGUAGE_SWITCH_STATE_RECORD_KEY = 'pending-language-switch';
     const CONTROL_SWITCH_TRANSITION_MS = 200;
     const PREVIEW_VOLUME = 0.5;
     const MIN_CURVE_FREQUENCY_HZ = 8.175798915643707;
@@ -40,6 +37,23 @@
 
         return template.replace(/\{(\w+)\}/g, (match, token) => {
             return Object.prototype.hasOwnProperty.call(params, token) ? params[token] : match;
+        });
+    }
+
+    function translateStaticSurface() {
+        document.title = t('meta.site_title');
+        htmlElement.lang = CURRENT_LOCALE;
+        document.querySelectorAll('[data-i18n]').forEach((element) => {
+            element.textContent = t(element.dataset.i18n);
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+            element.setAttribute('title', t(element.dataset.i18nTitle));
+        });
+        document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+            element.setAttribute('aria-label', t(element.dataset.i18nAriaLabel));
+        });
+        document.querySelectorAll('[data-i18n-content]').forEach((element) => {
+            element.setAttribute('content', t(element.dataset.i18nContent));
         });
     }
 
@@ -272,220 +286,29 @@
 
         languageSelect.disabled = true;
         try {
-            await persistLanguageSwitchState();
-        } catch (error) {
-            console.warn('Failed to preserve page state during language change.', error);
-        }
+            TRANSLATIONS = TRANSLATIONS_BY_LOCALE[nextLocale] || TRANSLATIONS_BY_LOCALE[DEFAULT_LOCALE] || TRANSLATIONS;
+            CURRENT_LOCALE = nextLocale;
+            document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(nextLocale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
 
-        document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(nextLocale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
-
-        const url = new URL(window.location.href);
-        if (nextLocale === DEFAULT_LOCALE) {
-            url.searchParams.delete('lang');
-        } else {
-            url.searchParams.set('lang', nextLocale);
+            const url = new URL(window.location.href);
+            if (nextLocale === DEFAULT_LOCALE) {
+                url.searchParams.delete('lang');
+            } else {
+                url.searchParams.set('lang', nextLocale);
+            }
+            window.history.replaceState({}, '', url.toString());
+            translateStaticSurface();
+            renderQueue();
+            renderConvertedFiles();
+            renderLayers();
+        } finally {
+            languageSelect.disabled = false;
         }
-        window.location.href = url.toString();
     });
 
     keepQueueToggle.addEventListener('change', () => {
         localStorage.setItem('keepQueueAfterSynth', keepQueueToggle.checked);
     });
-
-    function supportsIndexedDb() {
-        return typeof window.indexedDB !== 'undefined';
-    }
-
-    function openLanguageSwitchDb() {
-        return new Promise((resolve, reject) => {
-            const request = window.indexedDB.open(LANGUAGE_SWITCH_STATE_DB_NAME, 1);
-
-            request.onupgradeneeded = () => {
-                const database = request.result;
-                if (!database.objectStoreNames.contains(LANGUAGE_SWITCH_STATE_STORE_NAME)) {
-                    database.createObjectStore(LANGUAGE_SWITCH_STATE_STORE_NAME);
-                }
-            };
-
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    function requestToPromise(request) {
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    function transactionDone(transaction) {
-        return new Promise((resolve, reject) => {
-            transaction.oncomplete = () => resolve();
-            transaction.onabort = () => reject(transaction.error);
-            transaction.onerror = () => reject(transaction.error);
-        });
-    }
-
-    async function writeLanguageSwitchState(state) {
-        const database = await openLanguageSwitchDb();
-        try {
-            const transaction = database.transaction(LANGUAGE_SWITCH_STATE_STORE_NAME, 'readwrite');
-            transaction.objectStore(LANGUAGE_SWITCH_STATE_STORE_NAME).put(state, LANGUAGE_SWITCH_STATE_RECORD_KEY);
-            await transactionDone(transaction);
-        } finally {
-            database.close();
-        }
-    }
-
-    async function readLanguageSwitchState() {
-        const database = await openLanguageSwitchDb();
-        try {
-            const transaction = database.transaction(LANGUAGE_SWITCH_STATE_STORE_NAME, 'readonly');
-            const request = transaction.objectStore(LANGUAGE_SWITCH_STATE_STORE_NAME).get(LANGUAGE_SWITCH_STATE_RECORD_KEY);
-            const state = await requestToPromise(request);
-            await transactionDone(transaction);
-            return state;
-        } finally {
-            database.close();
-        }
-    }
-
-    async function clearLanguageSwitchState() {
-        if (!supportsIndexedDb()) {
-            return;
-        }
-
-        const database = await openLanguageSwitchDb();
-        try {
-            const transaction = database.transaction(LANGUAGE_SWITCH_STATE_STORE_NAME, 'readwrite');
-            transaction.objectStore(LANGUAGE_SWITCH_STATE_STORE_NAME).delete(LANGUAGE_SWITCH_STATE_RECORD_KEY);
-            await transactionDone(transaction);
-        } finally {
-            database.close();
-        }
-    }
-
-    function cloneCurve(points) {
-        return points.map((point) => ({
-            frequency_hz: point.frequency_hz,
-            gain_db: point.gain_db,
-        }));
-    }
-
-    function cloneLayerState(layer) {
-        return {
-            active: layer.active,
-            type: layer.type,
-            duty: layer.duty,
-            volume: layer.volume,
-            curveEnabled: layer.curveEnabled,
-            frequencyCurve: cloneCurve(layer.frequencyCurve),
-            selectedPointIndex: layer.selectedPointIndex,
-        };
-    }
-
-    function sanitiseLayerState(rawLayer, index) {
-        const fallbackLayer = createDefaultLayer(index);
-        const allowedTypes = new Set(layerPresets.map((preset) => preset.type));
-        const dutyValue = Number(rawLayer?.duty);
-        const volumeValue = Number(rawLayer?.volume);
-        const frequencyCurve = Array.isArray(rawLayer?.frequencyCurve) && rawLayer.frequencyCurve.length >= 2
-            ? rawLayer.frequencyCurve
-                .map((point) => ({
-                    frequency_hz: clamp(
-                        Number(point.frequency_hz) || MIN_CURVE_FREQUENCY_HZ,
-                        MIN_CURVE_FREQUENCY_HZ,
-                        MAX_CURVE_FREQUENCY_HZ,
-                    ),
-                    gain_db: clamp(
-                        Number(point.gain_db) || 0.0,
-                        MIN_CURVE_GAIN_DB,
-                        MAX_CURVE_GAIN_DB,
-                    ),
-                }))
-                .sort((leftPoint, rightPoint) => leftPoint.frequency_hz - rightPoint.frequency_hz)
-            : fallbackLayer.frequencyCurve;
-
-        const selectedPointIndex = clamp(
-            Math.trunc(Number(rawLayer?.selectedPointIndex) || 0),
-            0,
-            frequencyCurve.length - 1,
-        );
-
-        return {
-            active: Boolean(rawLayer?.active),
-            type: allowedTypes.has(rawLayer?.type) ? rawLayer.type : fallbackLayer.type,
-            duty: clamp(Number.isFinite(dutyValue) ? dutyValue : fallbackLayer.duty, 0.01, 0.99),
-            volume: clamp(Number.isFinite(volumeValue) ? volumeValue : fallbackLayer.volume, 0.0, 2.0),
-            curveEnabled: Boolean(rawLayer?.curveEnabled),
-            frequencyCurve,
-            selectedPointIndex,
-        };
-    }
-
-    async function persistLanguageSwitchState() {
-        if (!supportsIndexedDb()) {
-            return;
-        }
-
-        const state = {
-            fileQueue: [...fileQueue],
-            layerCount,
-            layers: layers.map((layer) => cloneLayerState(layer)),
-            rate: rateSelect.value,
-            keepQueue: keepQueueToggle.checked,
-        };
-
-        await writeLanguageSwitchState(state);
-        sessionStorage.setItem(LANGUAGE_SWITCH_STATE_KEY, '1');
-    }
-
-    async function restoreLanguageSwitchState() {
-        if (sessionStorage.getItem(LANGUAGE_SWITCH_STATE_KEY) !== '1') {
-            return;
-        }
-
-        sessionStorage.removeItem(LANGUAGE_SWITCH_STATE_KEY);
-
-        if (!supportsIndexedDb()) {
-            return;
-        }
-
-        try {
-            const savedState = await readLanguageSwitchState();
-            if (!savedState) {
-                return;
-            }
-
-            fileQueue = Array.isArray(savedState.fileQueue)
-                ? savedState.fileQueue.filter((file) => file instanceof File && isMidiFile(file))
-                : [];
-
-            const restoredLayerCount = clamp(
-                Math.trunc(Number(savedState.layerCount) || 1),
-                1,
-                maxLayers,
-            );
-            layerCount = restoredLayerCount;
-
-            for (let index = 0; index < maxLayers; index += 1) {
-                const rawLayer = Array.isArray(savedState.layers) ? savedState.layers[index] : null;
-                layers[index] = rawLayer ? sanitiseLayerState(rawLayer, index) : createDefaultLayer(index);
-            }
-
-            if (typeof savedState.rate === 'string' && Array.from(rateSelect.options).some((option) => option.value === savedState.rate)) {
-                rateSelect.value = savedState.rate;
-            }
-
-            if (typeof savedState.keepQueue === 'boolean') {
-                keepQueueToggle.checked = savedState.keepQueue;
-                localStorage.setItem('keepQueueAfterSynth', String(savedState.keepQueue));
-            }
-        } finally {
-            await clearLanguageSwitchState();
-        }
-    }
 
     function isMidiFile(file) {
         return (
@@ -1433,12 +1256,8 @@
         fileInput.value = '';
     };
 
-    async function initialisePage() {
-        try {
-            await restoreLanguageSwitchState();
-        } catch (error) {
-            console.warn('Failed to restore page state after language change.', error);
-        }
+    function initialisePage() {
+        translateStaticSurface();
         renderQueue();
         renderConvertedFiles();
         renderLayers();

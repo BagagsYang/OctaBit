@@ -64,5 +64,6 @@
   "curve.points_summary": "Points de courbe : {count}. Sélection : {frequency} / {gain}",
   "curve.aria_label": "Éditeur de gain par fréquence pour la couche {index}",
   "errors.no_midi_file_uploaded": "Aucun fichier MIDI envoyé",
-  "errors.no_selected_file": "Aucun fichier sélectionné"
+  "errors.no_selected_file": "Aucun fichier sélectionné",
+  "errors.empty_midi_file": "Le fichier MIDI envoyé est vide. Ajoutez à nouveau le fichier d'origine puis réessayez."
 }

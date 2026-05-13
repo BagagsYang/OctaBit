@@ -55,7 +55,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn('<html lang="fr"', body)
         self.assertIn("Fichier(s) actuel(s)", body)
         self.assertIn("Traiter et télécharger", body)
-        self.assertIn('value="fr" selected', body)
+        self.assertIn('value="fr" data-i18n="toolbar.language_option.fr" selected', body)
         self.assertIn("Français", body)
 
     def test_index_uses_browser_language_for_simplified_chinese(self):
@@ -96,15 +96,17 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn('class="language-select-icon"', body)
         self.assertLess(body.index('class="language-select-icon"'), body.index('id="languageSelect"'))
         self.assertLess(body.index('id="themeSelect"'), body.index('id="languageSelect"'))
-        self.assertIn('<option value="system">System</option>', body)
-        self.assertIn('<option value="light">Light</option>', body)
-        self.assertIn('<option value="dark">Dark</option>', body)
+        self.assertIn('<option value="system" data-i18n="settings.theme_system">System</option>', body)
+        self.assertIn('<option value="light" data-i18n="settings.theme_light">Light</option>', body)
+        self.assertIn('<option value="dark" data-i18n="settings.theme_dark">Dark</option>', body)
         self.assertIn("Theme", body)
         self.assertIn("Light", body)
         self.assertIn("Dark", body)
         self.assertIn("System", body)
         self.assertIn('class="module output-module"', body)
         self.assertIn('id="octabit-config"', body)
+        self.assertIn('"translationsByLocale"', body)
+        self.assertIn('data-i18n="queue.title"', body)
         self.assertIn("/static/js/theme-init.js", body)
         self.assertIn("/static/css/app.css", body)
         self.assertIn("/static/js/lucide-icons.js", body)
@@ -133,9 +135,12 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         body = response.get_data(as_text=True)
         self.assertEqual(200, response.status_code)
         self.assertIn("document.getElementById('octabit-config')", body)
-        self.assertIn("persistLanguageSwitchState", body)
-        self.assertIn("restoreLanguageSwitchState", body)
-        self.assertIn("pendingLanguageSwitchState", body)
+        self.assertIn("translateStaticSurface", body)
+        self.assertIn("TRANSLATIONS_BY_LOCALE[nextLocale]", body)
+        self.assertIn("window.history.replaceState", body)
+        self.assertNotIn("persistLanguageSwitchState", body)
+        self.assertNotIn("restoreLanguageSwitchState", body)
+        self.assertNotIn("pendingLanguageSwitchState", body)
         self.assertIn("SUPPORTED_LOCALES.includes(selectedLocale)", body)
         self.assertIn("window.confirm(t('converted.clear_confirm'))", body)
         self.assertIn("layer-control-grid", body)
@@ -284,6 +289,20 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(400, response.status_code)
         self.assertEqual("Aucun fichier MIDI envoyé", response.get_json()["error"])
 
+    def test_synthesise_rejects_empty_midi_file(self):
+        response = self.client.post(
+            "/synthesise",
+            data={
+                "rate": "16000",
+                "midi_file": (io.BytesIO(b""), "empty.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual("Uploaded MIDI file is empty.", response.get_json()["error"])
+
     def test_synthesise_accepts_layers_json_and_returns_wav(self):
         response = self.client.post(
             "/synthesise",
@@ -305,6 +324,24 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(b"RIFF", response.data[:4])
         self.assertIn("attachment;", response.headers["Content-Disposition"])
         self.assertIn("lead_sine.wav", response.headers["Content-Disposition"])
+
+    def test_synthesise_job_rejects_empty_midi_before_starting_job(self):
+        response = self.client.post(
+            "/synthesise/jobs?lang=zh-CN",
+            data={
+                "rate": "16000",
+                "midi_file": (io.BytesIO(b""), "empty.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(
+            "上传的 MIDI 文件为空。请重新添加原始文件后再试。",
+            response.get_json()["error"],
+        )
+        self.assertEqual([], list(Path(self.job_root.name).iterdir()))
 
     def test_synthesise_job_returns_ready_status_and_download(self):
         response = self.client.post(

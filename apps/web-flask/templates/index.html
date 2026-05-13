@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ translations["meta.site_title"] }}</title>
-    <meta name="description" content="{{ translations['meta.description'] }}">
-    <meta name="application-name" content="{{ translations['meta.site_name'] }}">
+    <meta name="description" content="{{ translations['meta.description'] }}" data-i18n-content="meta.description">
+    <meta name="application-name" content="{{ translations['meta.site_name'] }}" data-i18n-content="meta.site_name">
     <link rel="canonical" href="https://octabit.cc/">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="{{ translations['meta.site_name'] }}">
-    <meta property="og:title" content="{{ translations['meta.site_title'] }}">
-    <meta property="og:description" content="{{ translations['meta.description'] }}">
+    <meta property="og:site_name" content="{{ translations['meta.site_name'] }}" data-i18n-content="meta.site_name">
+    <meta property="og:title" content="{{ translations['meta.site_title'] }}" data-i18n-content="meta.site_title">
+    <meta property="og:description" content="{{ translations['meta.description'] }}" data-i18n-content="meta.description">
     <meta property="og:url" content="https://octabit.cc/">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="{{ translations['meta.site_title'] }}">
-    <meta name="twitter:description" content="{{ translations['meta.description'] }}">
+    <meta name="twitter:title" content="{{ translations['meta.site_title'] }}" data-i18n-content="meta.site_title">
+    <meta name="twitter:description" content="{{ translations['meta.description'] }}" data-i18n-content="meta.description">
     <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,8 +37,8 @@
                     </div>
                 </div>
                 <div>
-                    <h1 class="brand-title">{{ translations["meta.page_title"] }}</h1>
-                    <div class="brand-subtitle">{{ translations["meta.subtitle"] }}</div>
+                    <h1 class="brand-title" data-i18n="meta.page_title">{{ translations["meta.page_title"] }}</h1>
+                    <div class="brand-subtitle" data-i18n="meta.subtitle">{{ translations["meta.subtitle"] }}</div>
                 </div>
             </div>
             <div class="top-controls">
@@ -49,10 +49,12 @@
                         id="themeSelect"
                         title="{{ translations['settings.theme'] }}"
                         aria-label="{{ translations['settings.theme'] }}"
+                        data-i18n-title="settings.theme"
+                        data-i18n-aria-label="settings.theme"
                     >
-                        <option value="system">{{ translations["settings.theme_system"] }}</option>
-                        <option value="light">{{ translations["settings.theme_light"] }}</option>
-                        <option value="dark">{{ translations["settings.theme_dark"] }}</option>
+                        <option value="system" data-i18n="settings.theme_system">{{ translations["settings.theme_system"] }}</option>
+                        <option value="light" data-i18n="settings.theme_light">{{ translations["settings.theme_light"] }}</option>
+                        <option value="dark" data-i18n="settings.theme_dark">{{ translations["settings.theme_dark"] }}</option>
                     </select>
                 </span>
                 <span class="language-select-frame">
@@ -62,9 +64,11 @@
                         id="languageSelect"
                         title="{{ translations['toolbar.language_title'] }}"
                         aria-label="{{ translations['toolbar.language_title'] }}"
+                        data-i18n-title="toolbar.language_title"
+                        data-i18n-aria-label="toolbar.language_title"
                     >
                         {% for language_code in supported_locales %}
-                        <option value="{{ language_code }}" {% if language_code == locale %}selected{% endif %}>{{ translations["toolbar.language_option." ~ language_code] }}</option>
+                        <option value="{{ language_code }}" data-i18n="toolbar.language_option.{{ language_code }}" {% if language_code == locale %}selected{% endif %}>{{ translations["toolbar.language_option." ~ language_code] }}</option>
                         {% endfor %}
                     </select>
                 </span>
@@ -73,26 +77,26 @@
 
         <form id="synthForm">
             <div class="workspace-grid">
-                <aside class="file-column" aria-label="{{ translations['files.operations'] }}">
+                <aside class="file-column" aria-label="{{ translations['files.operations'] }}" data-i18n-aria-label="files.operations">
                     <section class="module upload-module">
                         <div class="module-header">
-                            <h2 class="module-title">{{ translations["files.upload"] }}</h2>
+                            <h2 class="module-title" data-i18n="files.upload">{{ translations["files.upload"] }}</h2>
                         </div>
                         <div class="drop-zone" id="dropZone">
                             <span class="drop-zone-prompt">
-                                {{ translations["queue.drop_prompt"] }}
-                                <span class="drop-zone-hint">{{ translations["queue.drop_hint"] }}</span>
+                                <span data-i18n="queue.drop_prompt">{{ translations["queue.drop_prompt"] }}</span>
+                                <span class="drop-zone-hint" data-i18n="queue.drop_hint">{{ translations["queue.drop_hint"] }}</span>
                             </span>
                             <input class="form-control" type="file" id="midi_file" accept=".mid,.midi" multiple>
                         </div>
                         <div class="module-divider"></div>
                         <div class="module-header">
-                            <h2 class="module-title">{{ translations["queue.title"] }}</h2>
+                            <h2 class="module-title" data-i18n="queue.title">{{ translations["queue.title"] }}</h2>
                             <span class="module-readout"><span id="queueCount">0</span></span>
                         </div>
-                        <p class="empty-state" id="queueEmpty">{{ translations["queue.empty"] }}</p>
+                        <p class="empty-state" id="queueEmpty" data-i18n="queue.empty">{{ translations["queue.empty"] }}</p>
                         <ul class="panel-list queue-list" id="queueList"></ul>
-                        <button type="button" class="utility-btn w-100 mt-3" id="clearQueueBtn" style="display: none;">{{ translations["queue.clear"] }}</button>
+                        <button type="button" class="utility-btn w-100 mt-3" id="clearQueueBtn" style="display: none;" data-i18n="queue.clear">{{ translations["queue.clear"] }}</button>
                         <div class="control-switch">
                             <input
                                 class="control-switch-input"
@@ -103,18 +107,18 @@
                                 <span class="control-switch-track" aria-hidden="true">
                                     <span class="control-switch-thumb"></span>
                                 </span>
-                                <span class="control-switch-text">{{ translations["queue.keep_after"] }}</span>
+                                <span class="control-switch-text" data-i18n="queue.keep_after">{{ translations["queue.keep_after"] }}</span>
                             </label>
                         </div>
                     </section>
 
                     <section class="module output-module">
                         <div class="module-header">
-                            <h2 class="module-title">{{ translations["output.title"] }}</h2>
+                            <h2 class="module-title" data-i18n="output.title">{{ translations["output.title"] }}</h2>
                         </div>
                         <div class="output-stack">
                             <label class="field-block mb-0" for="rate">
-                                <span class="field-label">{{ translations["output.sample_rate"] }}</span>
+                                <span class="field-label" data-i18n="output.sample_rate">{{ translations["output.sample_rate"] }}</span>
                                 <select class="form-select control-select" id="rate" name="rate">
                                     <option value="44100">44100 Hz</option>
                                     <option value="48000" selected>48000 Hz</option>
@@ -122,37 +126,37 @@
                                 </select>
                             </label>
                             <div class="status-cluster">
-                                <div class="queue-count-label">{{ translations["status.queue_ready"] }} <span id="queueCountAction">0</span></div>
+                                <div class="queue-count-label"><span data-i18n="status.queue_ready">{{ translations["status.queue_ready"] }}</span> <span id="queueCountAction">0</span></div>
                                 <div class="loading" role="status" aria-live="polite">
                                     <span class="spinner-border" aria-hidden="true"></span>
-                                    <span id="processingStatus">{{ translations["status.generating_audio"] }}</span>
+                                    <span id="processingStatus" data-i18n="status.generating_audio">{{ translations["status.generating_audio"] }}</span>
                                 </div>
                             </div>
-                            <button type="submit" class="process-btn" id="submitBtn">{{ translations["actions.process_download"] }}</button>
+                            <button type="submit" class="process-btn" id="submitBtn" data-i18n="actions.process_download">{{ translations["actions.process_download"] }}</button>
                         </div>
                     </section>
 
                     <section class="module converted-module">
                         <div class="module-header">
-                            <h2 class="module-title">{{ translations["converted.title"] }}</h2>
+                            <h2 class="module-title" data-i18n="converted.title">{{ translations["converted.title"] }}</h2>
                             <span class="module-readout" id="convertedCount">0</span>
                         </div>
-                        <p class="empty-state" id="convertedEmpty">{{ translations["converted.empty"] }}</p>
+                        <p class="empty-state" id="convertedEmpty" data-i18n="converted.empty">{{ translations["converted.empty"] }}</p>
                         <ul class="panel-list converted-list" id="convertedList"></ul>
-                        <button type="button" class="utility-btn w-100 mt-3" id="clearConvertedBtn" style="display: none;">{{ translations["converted.clear"] }}</button>
+                        <button type="button" class="utility-btn w-100 mt-3" id="clearConvertedBtn" style="display: none;" data-i18n="converted.clear">{{ translations["converted.clear"] }}</button>
                     </section>
                 </aside>
 
-                <main class="parameter-column" aria-label="{{ translations['parameters.title'] }}">
+                <main class="parameter-column" aria-label="{{ translations['parameters.title'] }}" data-i18n-aria-label="parameters.title">
                     <section class="module">
                         <div class="module-header">
-                            <h2 class="module-title">{{ translations["parameters.title"] }}</h2>
-                            <span class="module-readout">{{ translations["parameters.readout"] }}</span>
+                            <h2 class="module-title" data-i18n="parameters.title">{{ translations["parameters.title"] }}</h2>
+                            <span class="module-readout" data-i18n="parameters.readout">{{ translations["parameters.readout"] }}</span>
                         </div>
                         <div id="layersContainer"></div>
                         <div class="layer-actions">
-                            <button type="button" class="utility-btn fw-bold" id="addLayerBtn">{{ translations["layers.add"] }}</button>
-                            <button type="button" class="utility-btn fw-bold" id="removeLayerBtn">{{ translations["layers.remove"] }}</button>
+                            <button type="button" class="utility-btn fw-bold" id="addLayerBtn" data-i18n="layers.add">{{ translations["layers.add"] }}</button>
+                            <button type="button" class="utility-btn fw-bold" id="removeLayerBtn" data-i18n="layers.remove">{{ translations["layers.remove"] }}</button>
                         </div>
                     </section>
                 </main>
@@ -166,6 +170,7 @@
     "currentLocale": locale,
     "defaultLocale": default_locale,
     "supportedLocales": supported_locales,
+    "translationsByLocale": translations_by_locale,
     "localeCookieName": locale_cookie_name,
 } | tojson }}</script>
 <script src="{{ url_for('static', filename='js/lucide-icons.js') }}"></script>
