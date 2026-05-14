@@ -367,6 +367,10 @@ input:focus-visible,
     color: currentColor;
 }
 
+.github-link-svg {
+    transform: translateX(-0.5px);
+}
+
 .workspace-grid {
     display: grid;
     grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
