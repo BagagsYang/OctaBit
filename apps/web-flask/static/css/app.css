@@ -249,8 +249,34 @@ input:focus-visible,
 .language-select-frame {
     position: relative;
     display: block;
-    width: 136px;
-    flex: 0 0 136px;
+    width: 38px;
+    flex: 0 0 38px;
+}
+
+.github-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 6px;
+    background-color: var(--surface-muted);
+    color: var(--muted-text);
+    border: 1px solid var(--border-color);
+    text-decoration: none;
+}
+
+.github-link:hover,
+.github-link:focus {
+    color: var(--text-color);
+    background-color: var(--surface-muted);
+}
+
+.github-link:focus-visible {
+    outline: none;
+    border-color: var(--accent-strong);
+    box-shadow: 0 0 0 2px var(--accent-ring);
 }
 
 .theme-select,
@@ -286,34 +312,58 @@ input:focus-visible,
 
 .theme-select,
 .language-select {
-    min-width: 136px;
-    font-size: 0.86rem;
+    min-width: 38px;
+    font-size: 0;
 }
 
 .theme-select,
 .language-select {
     width: 100%;
     min-width: 0;
-    padding-left: 36px;
+    padding: 0;
+    background-image: none;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.theme-select option,
+.language-select option {
+    font-size: 0.86rem;
+    color: var(--text-color);
+    background-color: var(--surface-muted);
 }
 
 .theme-select-icon,
 .language-select-icon {
     position: absolute;
     top: 50%;
-    left: 12px;
+    left: 50%;
     z-index: 2;
     width: 15px;
     height: 15px;
     color: var(--muted-text);
     pointer-events: none;
-    transform: translateY(-50%);
+    transform: translate(-50%, -50%);
+}
+
+.theme-select-frame:hover .theme-select-icon,
+.theme-select-frame:focus-within .theme-select-icon,
+.language-select-frame:hover .language-select-icon,
+.language-select-frame:focus-within .language-select-icon {
+    color: var(--text-color);
 }
 
 .theme-select-icon .lucide-icon,
 .language-select-icon .lucide-icon {
     width: 15px;
     height: 15px;
+    color: currentColor;
+}
+
+.github-link .hugeicon {
+    width: 17px;
+    height: 17px;
     color: currentColor;
 }
 
@@ -1141,7 +1191,8 @@ input:focus-visible,
         min-height: 104px;
     }
 
+    .theme-select,
     .language-select {
-        min-width: 128px;
+        min-width: 38px;
     }
 }

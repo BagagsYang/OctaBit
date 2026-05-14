@@ -104,6 +104,7 @@
     const themeSelectIcon = document.getElementById('themeSelectIcon');
     const languageSelect = document.getElementById('languageSelect');
     const languageSelectIcon = document.querySelector('.language-select-icon');
+    const githubLinkIcon = document.querySelector('.github-link-icon');
     const layersContainer = document.getElementById('layersContainer');
     const addLayerBtn = document.getElementById('addLayerBtn');
     const removeLayerBtn = document.getElementById('removeLayerBtn');
@@ -119,6 +120,9 @@
     languageSelect.value = CURRENT_LOCALE;
     if (languageSelectIcon) {
         languageSelectIcon.innerHTML = ICONS.svg('languages', 'lucide-icon language-option-icon');
+    }
+    if (githubLinkIcon) {
+        githubLinkIcon.innerHTML = ICONS.svg('github', 'hugeicon github-link-svg');
     }
 
     function isThemeValue(value) {

@@ -96,6 +96,11 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn('class="language-select-icon"', body)
         self.assertLess(body.index('class="language-select-icon"'), body.index('id="languageSelect"'))
         self.assertLess(body.index('id="themeSelect"'), body.index('id="languageSelect"'))
+        self.assertIn('href="https://github.com/bagags/octabit"', body)
+        self.assertIn('class="github-link"', body)
+        self.assertIn('class="github-link-icon"', body)
+        self.assertIn('aria-label="GitHub repository"', body)
+        self.assertLess(body.index('id="languageSelect"'), body.index('class="github-link"'))
         self.assertIn('<option value="system" data-i18n="settings.theme_system">System</option>', body)
         self.assertIn('<option value="light" data-i18n="settings.theme_light">Light</option>', body)
         self.assertIn('<option value="dark" data-i18n="settings.theme_dark">Dark</option>', body)
@@ -147,7 +152,9 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("document.getElementById('themeSelect')", body)
         self.assertIn("document.getElementById('themeSelectIcon')", body)
         self.assertIn("document.querySelector('.language-select-icon')", body)
+        self.assertIn("document.querySelector('.github-link-icon')", body)
         self.assertIn("window.octabitLucideIcons", body)
+        self.assertIn("ICONS.svg('github'", body)
         self.assertIn("ICONS.svg('languages'", body)
         self.assertIn("ICONS.svg('x')", body)
         self.assertIn("ICONS.svg('play')", body)
@@ -180,6 +187,9 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn("window.octabitLucideIcons", body)
         self.assertIn("License: ISC License", body)
+        self.assertIn("Hugeicons GitHub icon", body)
+        self.assertIn("hugeiconsAttributes", body)
+        self.assertIn("github:", body)
         self.assertIn("languages:", body)
         self.assertIn("'moon-star':", body)
         self.assertIn("play:", body)
@@ -211,21 +221,23 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn(".control-select:focus", body)
         self.assertIn("box-shadow: 0 0 0 2px var(--accent-ring);", body)
 
-    def test_theme_select_icon_preserves_control_width(self):
+    def test_theme_select_icon_uses_square_control(self):
         response = self.client.get("/static/css/app.css")
         self.addCleanup(response.close)
 
         body = response.get_data(as_text=True)
         self.assertEqual(200, response.status_code)
         self.assertIn(".theme-select-frame", body)
-        self.assertIn("width: 136px;", body)
-        self.assertIn("flex: 0 0 136px;", body)
+        self.assertIn("width: 38px;", body)
+        self.assertIn("flex: 0 0 38px;", body)
         self.assertIn(".theme-select-icon", body)
         self.assertIn("position: absolute;", body)
         self.assertIn("pointer-events: none;", body)
-        self.assertIn("padding-left: 36px;", body)
+        self.assertIn("font-size: 0;", body)
+        self.assertIn("background-image: none;", body)
+        self.assertIn("-webkit-appearance: none;", body)
 
-    def test_language_select_icon_matches_theme_icon_position(self):
+    def test_language_select_icon_matches_theme_square_position(self):
         response = self.client.get("/static/css/app.css")
         self.addCleanup(response.close)
 
@@ -235,9 +247,14 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn(".theme-select,\n.language-select {\n    width: 100%;", body)
         self.assertIn(".theme-select-icon,\n.language-select-icon", body)
         self.assertIn(".theme-select-icon .lucide-icon,\n.language-select-icon .lucide-icon", body)
-        self.assertIn("width: 136px;", body)
-        self.assertIn("flex: 0 0 136px;", body)
-        self.assertIn("left: 12px;", body)
+        self.assertIn("width: 38px;", body)
+        self.assertIn("flex: 0 0 38px;", body)
+        self.assertIn("left: 50%;", body)
+        self.assertIn("transform: translate(-50%, -50%);", body)
+        self.assertIn(".theme-select-frame:hover .theme-select-icon", body)
+        self.assertIn(".language-select-frame:hover .language-select-icon", body)
+        self.assertIn(".theme-select-frame:focus-within .theme-select-icon", body)
+        self.assertIn(".language-select-frame:focus-within .language-select-icon", body)
 
     def test_theme_init_script_resolves_stored_or_system_theme(self):
         response = self.client.get("/static/js/theme-init.js")

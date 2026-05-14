@@ -6,6 +6,7 @@
   "meta.subtitle": "A simple web tool for converting MIDI files into 8-bit style music.",
   "toolbar.toggle_theme": "Toggle Light/Dark Mode",
   "toolbar.language_title": "Language",
+  "toolbar.github_repo": "GitHub repository",
   "toolbar.language_option.en": "English",
   "toolbar.language_option.fr": "Français",
   "toolbar.language_option.zh-CN": "简体中文",
