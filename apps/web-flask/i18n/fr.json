@@ -43,6 +43,7 @@
   "status.rendering_file": "Rendu {current}/{total} : {filename}",
   "status.file_ready": "Prêt sur le serveur {current}/{total} : {filename}",
   "status.downloading_file": "Démarrage du téléchargement {current}/{total} : {filename}",
+  "alerts.upload_error": "Erreur pendant l'import de {filename} : {error}",
   "alerts.processing_error": "Erreur pendant le traitement de {filename} : {error}",
   "alerts.processing_unknown": "Une erreur est survenue pendant le traitement de {filename}.",
   "wave.pulse": "Carré/impulsion",

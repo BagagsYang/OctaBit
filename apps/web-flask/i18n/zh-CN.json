@@ -43,6 +43,7 @@
   "status.rendering_file": "正在渲染 {current}/{total}：{filename}",
   "status.file_ready": "服务器已准备好 {current}/{total}：{filename}",
   "status.downloading_file": "正在开始下载 {current}/{total}：{filename}",
+  "alerts.upload_error": "上传 {filename} 时出错：{error}",
   "alerts.processing_error": "处理 {filename} 时出错：{error}",
   "alerts.processing_unknown": "处理 {filename} 时发生错误。",
   "wave.pulse": "方波/脉冲",

@@ -11,8 +11,10 @@
     const themeController = window.octabitTheme || {};
     const THEME_STORAGE_KEY = themeController.storageKey || 'octabitTheme';
     const THEME_VALUES = ['light', 'dark'];
+    const WORKSPACE_API_URL = '/api/workspace';
     const SYNTHESIS_JOBS_API_URL = '/api/synthesis-jobs';
     const CONTROL_SWITCH_TRANSITION_MS = 200;
+    const WORKSPACE_CONFIG_SAVE_DELAY_MS = 400;
     const PREVIEW_VOLUME = 0.5;
     const MIN_CURVE_FREQUENCY_HZ = 8.175798915643707;
     const MAX_CURVE_FREQUENCY_HZ = 12543.853951415975;
@@ -91,6 +93,8 @@
     previewAudio.volume = PREVIEW_VOLUME;
     let dragState = null;
     let layerRenderTimer = null;
+    let workspaceConfigSaveTimer = null;
+    let isRestoringWorkspace = false;
     let convertedFiles = [];
     const layers = Array.from({ length: maxLayers }, (_, index) => createDefaultLayer(index));
 
@@ -341,6 +345,138 @@
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     }
 
+    function currentWorkspaceConfig() {
+        return {
+            schema: 'octabit.workspace_config.v1',
+            sample_rate: Number(rateSelect.value),
+            layers: layers.slice(0, layerCount).map((layer) => ({
+                type: layer.type,
+                duty: Number(layer.duty.toFixed(4)),
+                volume: Number(layer.volume.toFixed(4)),
+                curve_enabled: Boolean(layer.curveEnabled),
+                frequency_curve: layer.frequencyCurve.map((point) => ({
+                    frequency_hz: point.frequency_hz,
+                    gain_db: Number(point.gain_db.toFixed(4)),
+                })),
+            })),
+        };
+    }
+
+    function scheduleWorkspaceConfigSave() {
+        if (isRestoringWorkspace) {
+            return;
+        }
+        window.clearTimeout(workspaceConfigSaveTimer);
+        workspaceConfigSaveTimer = window.setTimeout(saveWorkspaceConfig, WORKSPACE_CONFIG_SAVE_DELAY_MS);
+    }
+
+    async function saveWorkspaceConfig() {
+        workspaceConfigSaveTimer = null;
+        try {
+            await fetch(`${WORKSPACE_API_URL}/config`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(currentWorkspaceConfig()),
+            });
+        } catch (error) {
+            console.warn('Failed to save workspace config.', error);
+        }
+    }
+
+    function applyWorkspaceConfig(config) {
+        if (!config || !Array.isArray(config.layers)) {
+            return;
+        }
+
+        if ([44100, 48000, 96000].includes(Number(config.sample_rate))) {
+            rateSelect.value = String(config.sample_rate);
+        }
+
+        layerCount = Math.min(Math.max(config.layers.length, 1), maxLayers);
+        for (let index = 0; index < maxLayers; index += 1) {
+            layers[index] = createDefaultLayer(index);
+        }
+        config.layers.slice(0, layerCount).forEach((configLayer, index) => {
+            const defaultLayer = createDefaultLayer(index);
+            layers[index] = {
+                ...defaultLayer,
+                type: typeof configLayer.type === 'string' ? configLayer.type : defaultLayer.type,
+                duty: Number.isFinite(Number(configLayer.duty)) ? Number(configLayer.duty) : defaultLayer.duty,
+                volume: Number.isFinite(Number(configLayer.volume)) ? Number(configLayer.volume) : defaultLayer.volume,
+                curveEnabled: Boolean(configLayer.curve_enabled),
+                frequencyCurve: Array.isArray(configLayer.frequency_curve) && configLayer.frequency_curve.length
+                    ? configLayer.frequency_curve.map((point) => ({
+                        frequency_hz: Number(point.frequency_hz),
+                        gain_db: Number(point.gain_db),
+                    }))
+                    : createDefaultCurve(),
+                selectedPointIndex: 0,
+            };
+        });
+    }
+
+    function uploadRecordFromApi(upload) {
+        return {
+            fileId: upload.file_id,
+            name: upload.name,
+            size: upload.size,
+        };
+    }
+
+    function convertedRecordFromApi(file) {
+        return {
+            jobId: file.job_id,
+            name: file.name,
+            sourceName: file.source_name,
+            size: file.size,
+            url: new URL(file.download_url, window.location.origin).toString(),
+            objectUrl: false,
+            deleteUrl: file.delete_url ? new URL(file.delete_url, window.location.origin).toString() : null,
+        };
+    }
+
+    async function restoreWorkspace() {
+        try {
+            const response = await fetch(WORKSPACE_API_URL);
+            const payload = await readJsonResponse(response);
+            if (!response.ok) {
+                throw new Error(responseErrorMessage(payload, response.statusText));
+            }
+
+            isRestoringWorkspace = true;
+            fileQueue = Array.isArray(payload.uploads) ? payload.uploads.map(uploadRecordFromApi) : [];
+            convertedFiles = Array.isArray(payload.converted_files)
+                ? payload.converted_files.map(convertedRecordFromApi)
+                : [];
+            applyWorkspaceConfig(payload.config);
+        } catch (error) {
+            console.warn('Failed to restore workspace.', error);
+        } finally {
+            isRestoringWorkspace = false;
+            renderQueue();
+            renderConvertedFiles();
+            renderLayers();
+        }
+    }
+
+    async function persistQueueOrder() {
+        try {
+            await fetch(`${WORKSPACE_API_URL}/queue`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    file_ids: fileQueue.map((file) => file.fileId),
+                }),
+            });
+        } catch (error) {
+            console.warn('Failed to save queue order.', error);
+        }
+    }
+
     function renderQueue() {
         queueList.innerHTML = '';
         fileQueue.forEach((file, index) => {
@@ -437,8 +573,12 @@
         renderConvertedFiles();
     }
 
-    function addConvertedServerFile(downloadName, size, sourceName, downloadUrl, deleteUrl) {
+    function addConvertedServerFile(downloadName, size, sourceName, downloadUrl, deleteUrl, jobId = null) {
+        if (jobId) {
+            convertedFiles = convertedFiles.filter((file) => file.jobId !== jobId);
+        }
         convertedFiles.unshift({
+            jobId,
             name: downloadName,
             sourceName,
             size,
@@ -510,25 +650,73 @@
         const [draggedItem] = fileQueue.splice(dragStartIndex, 1);
         fileQueue.splice(dragEndIndex, 0, draggedItem);
         renderQueue();
+        persistQueueOrder();
     });
 
-    function addToQueue(files) {
-        for (const file of files) {
-            if (isMidiFile(file)) fileQueue.push(file);
+    async function uploadWorkspaceFile(file) {
+        const formData = new FormData();
+        formData.append('midi_file', file);
+        const response = await fetch(`${WORKSPACE_API_URL}/uploads`, {
+            method: 'POST',
+            body: formData,
+        });
+        const payload = await readJsonResponse(response);
+        if (!response.ok) {
+            throw new Error(responseErrorMessage(payload, response.statusText));
         }
+        return uploadRecordFromApi(payload.upload);
+    }
+
+    async function addToQueue(files) {
+        const uploadedFiles = [];
+        for (const file of files) {
+            if (!isMidiFile(file)) {
+                continue;
+            }
+            try {
+                uploadedFiles.push(await uploadWorkspaceFile(file));
+            } catch (error) {
+                alert(t('alerts.upload_error', {
+                    filename: file.name,
+                    error: error.message || t('alerts.processing_unknown', { filename: file.name }),
+                }));
+            }
+        }
+        fileQueue.push(...uploadedFiles);
         renderQueue();
         fileInput.value = '';
     }
 
-    window.removeFromQueue = (index) => {
-        fileQueue.splice(index, 1);
+    async function releaseWorkspaceUpload(file) {
+        if (!file.fileId) {
+            return;
+        }
+        await fetch(`${WORKSPACE_API_URL}/uploads/${file.fileId}`, {
+            method: 'DELETE',
+            keepalive: true,
+        });
+    }
+
+    window.removeFromQueue = async (index) => {
+        const [file] = fileQueue.splice(index, 1);
         renderQueue();
+        try {
+            await releaseWorkspaceUpload(file);
+        } catch (error) {
+            console.warn('Failed to delete workspace upload.', error);
+        }
     };
 
-    clearQueueBtn.addEventListener('click', () => {
+    clearQueueBtn.addEventListener('click', async () => {
+        const filesToClear = [...fileQueue];
         fileQueue = [];
         renderQueue();
         fileInput.value = '';
+        await Promise.all(filesToClear.map((file) => (
+            releaseWorkspaceUpload(file).catch((error) => {
+                console.warn('Failed to delete workspace upload.', error);
+            })
+        )));
     });
 
     clearConvertedBtn.addEventListener('click', () => {
@@ -536,8 +724,6 @@
             clearConvertedFiles();
         }
     });
-
-    window.addEventListener('beforeunload', clearConvertedFiles);
 
     dropZone.addEventListener('dragover', (event) => {
         event.preventDefault();
@@ -973,6 +1159,7 @@
         }
         layers[layerIndex].type = value;
         renderLayers();
+        scheduleWorkspaceConfigSave();
     }
 
     function normaliseDecimalInput(value, min, max) {
@@ -993,6 +1180,7 @@
             dutyFader.value = duty.toFixed(2);
         }
         updateFaderFill(dutyFader || input);
+        scheduleWorkspaceConfigSave();
     }
 
     function updateLayerVolume(layerIndex, value, input = null) {
@@ -1007,6 +1195,7 @@
             volumeFader.value = volume.toFixed(2);
         }
         updateFaderFill(volumeFader || input);
+        scheduleWorkspaceConfigSave();
     }
 
     function toggleCurveEnabled(layerIndex, enabled) {
@@ -1020,6 +1209,7 @@
         layerRenderTimer = window.setTimeout(() => {
             layerRenderTimer = null;
             renderLayers();
+            scheduleWorkspaceConfigSave();
         }, CONTROL_SWITCH_TRANSITION_MS);
     }
 
@@ -1053,6 +1243,7 @@
         });
         layer.selectedPointIndex = widestGapIndex + 1;
         renderLayers();
+        scheduleWorkspaceConfigSave();
     }
 
     function removeSelectedPoint(layerIndex) {
@@ -1064,12 +1255,14 @@
         layer.frequencyCurve.splice(layer.selectedPointIndex, 1);
         layer.selectedPointIndex = Math.max(0, layer.selectedPointIndex - 1);
         renderLayers();
+        scheduleWorkspaceConfigSave();
     }
 
     function resetCurve(layerIndex) {
         layers[layerIndex].frequencyCurve = createDefaultCurve();
         layers[layerIndex].selectedPointIndex = 0;
         renderLayers();
+        scheduleWorkspaceConfigSave();
     }
 
     window.updateLayerType = updateLayerType;
@@ -1097,6 +1290,7 @@
         layerCount += 1;
         layers[layerCount - 1].active = true;
         renderLayers();
+        scheduleWorkspaceConfigSave();
     };
 
     window.removeLayer = () => {
@@ -1104,6 +1298,7 @@
         layers[layerCount - 1] = createDefaultLayer(layerCount - 1);
         layerCount -= 1;
         renderLayers();
+        scheduleWorkspaceConfigSave();
     };
 
     window.playPreview = (layerIndex) => {
@@ -1118,6 +1313,7 @@
 
     addLayerBtn.addEventListener('click', window.addLayer);
     removeLayerBtn.addEventListener('click', window.removeLayer);
+    rateSelect.addEventListener('change', scheduleWorkspaceConfigSave);
 
     layersContainer.addEventListener('pointerdown', (event) => {
         const fader = event.target.closest('.fader-input');
@@ -1152,6 +1348,7 @@
         }
 
         renderLayers();
+        scheduleWorkspaceConfigSave();
     });
 
     window.addEventListener('pointerup', () => {
@@ -1234,7 +1431,7 @@
 
         const filesToProcess = [...fileQueue];
         const failedFiles = [];
-        const layersJson = JSON.stringify(activeLayersPayload());
+        const config = currentWorkspaceConfig();
         for (let index = 0; index < filesToProcess.length; index += 1) {
             const file = filesToProcess[index];
             processingStatus.textContent = t('status.processing_file', {
@@ -1243,15 +1440,16 @@
                 filename: file.name,
             });
 
-            const formData = new FormData();
-            formData.append('rate', rateSelect.value);
-            formData.append('layers_json', layersJson);
-            formData.append('midi_file', file);
-
             try {
                 const response = await fetch(SYNTHESIS_JOBS_API_URL, {
                     method: 'POST',
-                    body: formData,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        file_id: file.fileId,
+                        config,
+                    }),
                 });
                 if (!response.ok) {
                     const errorPayload = await readJsonResponse(response);
@@ -1277,6 +1475,7 @@
                     file.name,
                     downloadUrl,
                     readyJob.delete_url ? new URL(readyJob.delete_url, window.location.origin).toString() : null,
+                    readyJob.job_id || null,
                 );
                 processingStatus.textContent = t('status.downloading_file', {
                     current: index + 1,
@@ -1297,6 +1496,13 @@
         submitBtn.disabled = false;
         processingStatus.textContent = t('status.generating_audio');
         if (!keepQueueToggle.checked) {
+            const failedFileIds = new Set(failedFiles.map((file) => file.fileId));
+            const processedFiles = filesToProcess.filter((file) => !failedFileIds.has(file.fileId));
+            await Promise.all(processedFiles.map((file) => (
+                releaseWorkspaceUpload(file).catch((error) => {
+                    console.warn('Failed to delete processed workspace upload.', error);
+                })
+            )));
             fileQueue = failedFiles;
         }
         renderQueue();
@@ -1308,6 +1514,7 @@
         renderQueue();
         renderConvertedFiles();
         renderLayers();
+        restoreWorkspace();
     }
 
     initialisePage();

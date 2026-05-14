@@ -43,32 +43,22 @@ apps\web-flask\Launch_Synthesiser.bat
 
 ## 当前 API 契约
 
-浏览器 UI 现在使用 `/api/synthesis-jobs` 路由完成上传、状态轮询、WAV 下载和手动清理。较早的
-`/synthesise` 与 `/synthesise/jobs*` 路由仍保留用于兼容。完整契约位于
+浏览器 UI 使用基于 cookie 的匿名临时工作区。上传的 MIDI 文件、声音配置和已转换
+WAV 链接会在刷新后通过 `/api/workspace` 恢复。完整契约位于
 `../../docs/api-contract.zh-CN.md`。
-
-`POST /api/synthesis-jobs` 使用 `multipart/form-data`，包含：
-
-- `midi_file`：上传的 `.mid` 或 `.midi`
-- `rate`：`44100`、`48000` 或 `96000`
-- `layers_json`：层对象的 JSON 数组
-
-每个层对象包含：
-
-- `type`
-- `duty`
-- `volume`
-- `frequency_curve`：可选的 `{frequency_hz, gain_db}` 点数组
-
-浏览器 UI 在 JavaScript 中保存层状态，并将其序列化到 `layers_json` 中。
 
 当前 API 路由：
 
 - `GET /api/health`：轻量 JSON 健康检查。
-- `POST /api/synthesis-jobs`：接受上述表单字段并返回任务 id。
-- `GET /api/synthesis-jobs/<job_id>`：报告 queued、rendering、ready、failed 或 expired 状态。
+- `GET /api/workspace`：创建或恢复匿名临时工作区。
+- `POST /api/workspace/uploads`：存储一个排队的 `.mid` 或 `.midi` 上传文件。
+- `DELETE /api/workspace/uploads/<file_id>`：删除归属当前工作区的排队上传文件。
+- `PATCH /api/workspace/queue`：持久化队列顺序。
+- `PUT /api/workspace/config`：持久化采样率和层控制。
+- `POST /api/synthesis-jobs`：接受归属当前工作区的 `file_id` 和工作区配置，并返回任务 id；旧的 multipart API 形状仍保留用于兼容。
+- `GET /api/synthesis-jobs/<job_id>`：报告归属任务的 queued、rendering、ready、failed 或 expired 状态。
 - `GET /api/synthesis-jobs/<job_id>/download`：下载已准备好的 WAV 文件。
-- `DELETE /api/synthesis-jobs/<job_id>`：当用户清空已转换文件列表时删除服务器上的临时文件。
+- `DELETE /api/synthesis-jobs/<job_id>`：当用户清空已转换文件列表时删除归属当前工作区的服务器临时文件。
 
 兼容路由：
 
@@ -78,7 +68,8 @@ apps\web-flask\Launch_Synthesiser.bat
 - `GET /synthesise/jobs/<job_id>/download`：下载已准备好的 WAV 文件。
 - `DELETE /synthesise/jobs/<job_id>`：当用户清空已转换文件列表时删除服务器上的临时文件。
 
-已准备好的任务文件是临时文件，会在 `WEB_DOWNLOAD_TTL_SECONDS` 后过期；默认值为 1800 秒。浏览器也会在用户清空已转换文件列表时立即删除服务器上已准备好的文件。
+工作区文件是临时文件，会在 `WEB_WORKSPACE_TTL_SECONDS` 后过期；默认值为
+86400 秒。浏览器会在用户清空队列或已转换文件列表时立即删除对应的服务器文件。
 
 API 错误使用 `{"error":{"code":"...","message":"..."}}`。兼容路由继续保留现有
 `{"error":"..."}` 响应形状，除非后续明确迁移。
@@ -92,7 +83,9 @@ API 错误使用 `{"error":{"code":"...","message":"..."}}`。兼容路由继续
 - 将 Gunicorn 私有绑定到 `127.0.0.1:8000`。
 - 使用 systemd 管理 Gunicorn，例如通过 `octabit-web` 服务。
 - 使用 Caddy 作为公开反向代理，转发到 `127.0.0.1:8000`。
-- 让 `WEB_SYNTHESISE_JOB_ROOT`、`WEB_DOWNLOAD_TTL_SECONDS`、
+- 让 `WEB_SYNTHESISE_JOB_ROOT`、`WEB_WORKSPACE_TTL_SECONDS`、
+  `WEB_WORKSPACE_MAX_QUEUED_FILES`、`WEB_WORKSPACE_MAX_UPLOAD_BYTES`、
+  `WEB_WORKSPACE_MAX_CONVERTED_FILES`、`WEB_DOWNLOAD_TTL_SECONDS`、
   `WEB_MAX_UPLOAD_BYTES` 和 Gunicorn timeout 与预期的上传、渲染、下载行为保持一致。
 
 Gunicorn 命令形态示例：

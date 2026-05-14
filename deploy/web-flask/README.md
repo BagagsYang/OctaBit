@@ -61,7 +61,8 @@ docker compose -f compose.web.yml down
 - The container runs Gunicorn on `0.0.0.0:${PORT:-8000}` as a non-root user.
 - The image default and `compose.web.yml` both set `GUNICORN_TIMEOUT=600`. This gives slow SSH tunnel downloads more time, while the browser still downloads the generated WAV only after the server has finished rendering it.
 - The container includes a lightweight health check against `/` using Python's standard library, so no extra curl package is needed in the image.
-- Uploaded MIDI files, generated WAV files, and short-lived render job metadata are temporary files under `WEB_SYNTHESISE_JOB_ROOT`, defaulting to `/tmp/octabit-jobs`; the compose file mounts `/tmp` as a 1 GB in-memory tmpfs and no upload data is persisted.
-- Ready render jobs are kept for `WEB_DOWNLOAD_TTL_SECONDS` seconds, defaulting to 1800 seconds, so a user can retry a timed-out WAV download without rendering again. When a user clears the converted files list, the browser asks the server to delete those ready files immediately.
+- Anonymous workspace metadata, uploaded MIDI files, and generated WAV files live under `WEB_SYNTHESISE_JOB_ROOT`, defaulting to `/tmp/octabit-jobs`; the compose file mounts `/tmp` as a 1 GB in-memory tmpfs and no upload data is persisted.
+- Workspace files are kept for `WEB_WORKSPACE_TTL_SECONDS` seconds after last activity, defaulting to 86400 seconds. The default caps are 20 queued files, 100 MiB active MIDI uploads, and 20 converted files per workspace.
+- Legacy ready render jobs are kept for `WEB_DOWNLOAD_TTL_SECONDS` seconds, defaulting to 1800 seconds. When a user clears the queue or converted files list, the browser asks the server to delete the corresponding temporary files immediately.
 - The host port is intentionally bound to `127.0.0.1:8000` for tunnel-only testing.
 - For public deployment on `octabit.cc`, put Caddy or Nginx in front of this service and expose only ports 80 and 443 publicly. Keep the Flask/Gunicorn service private to the server or Docker network.

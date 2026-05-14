@@ -43,33 +43,25 @@ This app serves preview WAVs from the shared asset folder and should not duplica
 
 ## Current API contract
 
-The browser UI now uses the `/api/synthesis-jobs` routes for upload, status
-polling, WAV download, and manual cleanup. The older `/synthesise` and
-`/synthesise/jobs*` routes remain available for compatibility. The full
-contract lives in `../../docs/api-contract.md`.
-
-`POST /api/synthesis-jobs` uses `multipart/form-data` with:
-
-- `midi_file`: uploaded `.mid` or `.midi`
-- `rate`: one of `44100`, `48000`, or `96000`
-- `layers_json`: JSON array of layer objects
-
-Each layer object contains:
-
-- `type`
-- `duty`
-- `volume`
-- `frequency_curve`: optional array of `{frequency_hz, gain_db}` points
-
-The browser UI stores layer state in JavaScript and serialises it into `layers_json`.
+The browser UI uses cookie-backed anonymous temporary workspaces. Uploaded MIDI
+files, sound configuration, and converted WAV links are restored through
+`/api/workspace` after refresh. The full contract lives in
+`../../docs/api-contract.md`.
 
 Current API routes:
 
 - `GET /api/health`: lightweight JSON health check.
-- `POST /api/synthesis-jobs`: accepts the form fields above and returns a job id.
-- `GET /api/synthesis-jobs/<job_id>`: reports queued, rendering, ready, failed, or expired status.
+- `GET /api/workspace`: creates or restores the anonymous temporary workspace.
+- `POST /api/workspace/uploads`: stores one queued `.mid` or `.midi` upload.
+- `DELETE /api/workspace/uploads/<file_id>`: deletes an owned queued upload.
+- `PATCH /api/workspace/queue`: persists queue order.
+- `PUT /api/workspace/config`: persists sample rate and layer controls.
+- `POST /api/synthesis-jobs`: accepts an owned `file_id` plus workspace config
+  and returns a job id; the older multipart API shape is still accepted for
+  compatibility.
+- `GET /api/synthesis-jobs/<job_id>`: reports queued, rendering, ready, failed, or expired status for an owned job.
 - `GET /api/synthesis-jobs/<job_id>/download`: downloads the ready WAV file.
-- `DELETE /api/synthesis-jobs/<job_id>`: removes the temporary server file when a user clears converted files.
+- `DELETE /api/synthesis-jobs/<job_id>`: removes an owned temporary server file when a user clears converted files.
 
 Compatibility routes:
 
@@ -79,9 +71,9 @@ Compatibility routes:
 - `GET /synthesise/jobs/<job_id>/download`: downloads the ready WAV file.
 - `DELETE /synthesise/jobs/<job_id>`: removes the temporary server file when a user clears converted files.
 
-Ready job files are temporary and expire after `WEB_DOWNLOAD_TTL_SECONDS`, which
-defaults to 1800 seconds. The browser also deletes ready server files immediately
-when the user clears the converted files list.
+Workspace files are temporary and expire after `WEB_WORKSPACE_TTL_SECONDS`, which
+defaults to 86400 seconds. The browser deletes queued uploads or converted WAVs
+immediately when the user clears those lists.
 
 API errors use `{"error":{"code":"...","message":"..."}}`. Compatibility routes
 keep their existing `{"error":"..."}` response shape unless they are explicitly
@@ -96,7 +88,9 @@ The current production model can run without Docker:
 - Bind Gunicorn privately to `127.0.0.1:8000`.
 - Manage Gunicorn with systemd, for example through the `octabit-web` service.
 - Use Caddy as the public reverse proxy to `127.0.0.1:8000`.
-- Keep `WEB_SYNTHESISE_JOB_ROOT`, `WEB_DOWNLOAD_TTL_SECONDS`,
+- Keep `WEB_SYNTHESISE_JOB_ROOT`, `WEB_WORKSPACE_TTL_SECONDS`,
+  `WEB_WORKSPACE_MAX_QUEUED_FILES`, `WEB_WORKSPACE_MAX_UPLOAD_BYTES`,
+  `WEB_WORKSPACE_MAX_CONVERTED_FILES`, `WEB_DOWNLOAD_TTL_SECONDS`,
   `WEB_MAX_UPLOAD_BYTES`, and the Gunicorn timeout aligned with expected upload,
   render, and download behaviour.
 

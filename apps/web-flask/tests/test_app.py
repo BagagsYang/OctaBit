@@ -1,9 +1,11 @@
 import io
 import json
+import sqlite3
 import sys
 import tempfile
 import time
 import unittest
+from contextlib import closing
 from pathlib import Path
 from unittest import mock
 
@@ -22,6 +24,10 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
             "SYNTHESISE_JOBS_INLINE": web_app.app.config.get("SYNTHESISE_JOBS_INLINE"),
             "WEB_DOWNLOAD_TTL_SECONDS": web_app.app.config.get("WEB_DOWNLOAD_TTL_SECONDS"),
             "MAX_CONTENT_LENGTH": web_app.app.config.get("MAX_CONTENT_LENGTH"),
+            "WEB_WORKSPACE_TTL_SECONDS": web_app.app.config.get("WEB_WORKSPACE_TTL_SECONDS"),
+            "WEB_WORKSPACE_MAX_QUEUED_FILES": web_app.app.config.get("WEB_WORKSPACE_MAX_QUEUED_FILES"),
+            "WEB_WORKSPACE_MAX_UPLOAD_BYTES": web_app.app.config.get("WEB_WORKSPACE_MAX_UPLOAD_BYTES"),
+            "WEB_WORKSPACE_MAX_CONVERTED_FILES": web_app.app.config.get("WEB_WORKSPACE_MAX_CONVERTED_FILES"),
         }
         self.job_root = tempfile.TemporaryDirectory()
         self.addCleanup(self.job_root.cleanup)
@@ -29,6 +35,10 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         web_app.app.config["SYNTHESISE_JOB_ROOT"] = self.job_root.name
         web_app.app.config["SYNTHESISE_JOBS_INLINE"] = True
         web_app.app.config["WEB_DOWNLOAD_TTL_SECONDS"] = 1800
+        web_app.app.config["WEB_WORKSPACE_TTL_SECONDS"] = 86400
+        web_app.app.config["WEB_WORKSPACE_MAX_QUEUED_FILES"] = 20
+        web_app.app.config["WEB_WORKSPACE_MAX_UPLOAD_BYTES"] = 100 * 1024 * 1024
+        web_app.app.config["WEB_WORKSPACE_MAX_CONVERTED_FILES"] = 20
         self.client = web_app.app.test_client()
 
     def _restore_job_config(self):
@@ -50,6 +60,242 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
             },
             response.get_json(),
         )
+
+    def test_api_workspace_creates_reuses_and_replaces_expired_workspace(self):
+        response = self.client.get("/api/workspace")
+        self.addCleanup(response.close)
+
+        self.assertEqual(200, response.status_code)
+        self.assertIn(f"{web_app.WORKSPACE_COOKIE_NAME}=", response.headers.get("Set-Cookie", ""))
+        self.assertIn("HttpOnly", response.headers.get("Set-Cookie", ""))
+        payload = response.get_json()
+        self.assertEqual([], payload["uploads"])
+        self.assertEqual([], payload["converted_files"])
+        self.assertEqual("octabit.workspace_config.v1", payload["config"]["schema"])
+        self.assertEqual(20, payload["limits"]["max_queued_files"])
+        self.assertNotIn("id", payload["workspace"])
+
+        second_response = self.client.get("/api/workspace")
+        self.addCleanup(second_response.close)
+        self.assertEqual(200, second_response.status_code)
+        self.assertNotIn(web_app.WORKSPACE_COOKIE_NAME, second_response.headers.get("Set-Cookie", ""))
+
+        db_path = Path(self.job_root.name) / "workspaces.sqlite3"
+        with closing(sqlite3.connect(db_path)) as connection:
+            with connection:
+                connection.execute("UPDATE workspaces SET expires_at = ?", (time.time() - 1,))
+
+        replacement_response = self.client.get("/api/workspace")
+        self.addCleanup(replacement_response.close)
+        self.assertEqual(200, replacement_response.status_code)
+        self.assertIn(f"{web_app.WORKSPACE_COOKIE_NAME}=", replacement_response.headers.get("Set-Cookie", ""))
+        self.assertEqual([], replacement_response.get_json()["uploads"])
+
+    def test_api_workspace_upload_restore_reorder_delete_and_quota(self):
+        self.client.get("/api/workspace").close()
+
+        first_response = self.client.post(
+            "/api/workspace/uploads",
+            data={"midi_file": (io.BytesIO(self._build_midi_bytes()), "first.mid")},
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(first_response.close)
+        second_response = self.client.post(
+            "/api/workspace/uploads",
+            data={"midi_file": (io.BytesIO(self._build_midi_bytes()), "second.mid")},
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(second_response.close)
+
+        self.assertEqual(201, first_response.status_code)
+        self.assertEqual(201, second_response.status_code)
+        first_upload = first_response.get_json()["upload"]
+        second_upload = second_response.get_json()["upload"]
+        self.assertEqual(32, len(first_upload["file_id"]))
+        self.assertNotIn("id", first_upload)
+        self.assertTrue(self._workspace_upload_path(first_upload["file_id"]).exists())
+
+        reorder_response = self.client.patch(
+            "/api/workspace/queue",
+            json={"file_ids": [second_upload["file_id"], first_upload["file_id"]]},
+        )
+        self.addCleanup(reorder_response.close)
+        self.assertEqual(200, reorder_response.status_code)
+        self.assertEqual(
+            [second_upload["file_id"], first_upload["file_id"]],
+            [upload["file_id"] for upload in reorder_response.get_json()["uploads"]],
+        )
+
+        restored_response = self.client.get("/api/workspace")
+        self.addCleanup(restored_response.close)
+        self.assertEqual(
+            ["second.mid", "first.mid"],
+            [upload["name"] for upload in restored_response.get_json()["uploads"]],
+        )
+
+        delete_response = self.client.delete(f"/api/workspace/uploads/{first_upload['file_id']}")
+        self.addCleanup(delete_response.close)
+        self.assertEqual(204, delete_response.status_code)
+        self.assertEqual([], self._workspace_upload_paths(first_upload["file_id"]))
+
+        web_app.app.config["WEB_WORKSPACE_MAX_QUEUED_FILES"] = 1
+        quota_response = self.client.post(
+            "/api/workspace/uploads",
+            data={"midi_file": (io.BytesIO(self._build_midi_bytes()), "third.mid")},
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(quota_response.close)
+        self.assertEqual(409, quota_response.status_code)
+        self.assertEqual("workspace_queue_limit", quota_response.get_json()["error"]["code"])
+
+    def test_api_workspace_upload_total_bytes_limit(self):
+        self.client.get("/api/workspace").close()
+        web_app.app.config["WEB_WORKSPACE_MAX_UPLOAD_BYTES"] = 4
+
+        response = self.client.post(
+            "/api/workspace/uploads",
+            data={"midi_file": (io.BytesIO(self._build_midi_bytes()), "too-large.mid")},
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(413, response.status_code)
+        self.assertEqual("workspace_upload_bytes_limit", response.get_json()["error"]["code"])
+
+    def test_api_workspace_config_round_trips_canonical_json(self):
+        self.client.get("/api/workspace").close()
+        config = self._workspace_config()
+        config["sample_rate"] = 44100
+        config["layers"].append({
+            "type": "sine",
+            "duty": 0.5,
+            "volume": 0.75,
+            "curve_enabled": True,
+            "frequency_curve": [
+                {
+                    "frequency_hz": web_app.midi_to_wave.MIN_CURVE_FREQUENCY_HZ,
+                    "gain_db": -6.0,
+                },
+                {
+                    "frequency_hz": web_app.midi_to_wave.MAX_CURVE_FREQUENCY_HZ,
+                    "gain_db": 0.0,
+                },
+            ],
+        })
+
+        response = self.client.put("/api/workspace/config", json=config)
+        self.addCleanup(response.close)
+        self.assertEqual(200, response.status_code)
+        saved_config = response.get_json()["config"]
+        self.assertEqual(44100, saved_config["sample_rate"])
+        self.assertEqual(2, len(saved_config["layers"]))
+        self.assertTrue(saved_config["layers"][1]["curve_enabled"])
+
+        restored_response = self.client.get("/api/workspace")
+        self.addCleanup(restored_response.close)
+        self.assertEqual(saved_config, restored_response.get_json()["config"])
+
+        invalid_response = self.client.put("/api/workspace/config", json={"schema": "wrong"})
+        self.addCleanup(invalid_response.close)
+        self.assertEqual(422, invalid_response.status_code)
+        self.assertEqual("invalid_workspace_config", invalid_response.get_json()["error"]["code"])
+
+    def test_api_workspace_resource_routes_require_active_workspace(self):
+        valid_id = "0" * 32
+        for method, path in (
+            ("delete", f"/api/workspace/uploads/{valid_id}"),
+            ("get", f"/api/synthesis-jobs/{valid_id}"),
+            ("delete", f"/api/synthesis-jobs/{valid_id}"),
+            ("get", f"/api/synthesis-jobs/{valid_id}/download"),
+        ):
+            with self.subTest(method=method, path=path):
+                client = web_app.app.test_client()
+                response = getattr(client, method)(path)
+                response.close()
+                self.assertEqual(410, response.status_code)
+                self.assertEqual("workspace_expired", response.get_json()["error"]["code"])
+
+    def test_api_synthesis_job_accepts_workspace_file_id_and_enforces_ownership(self):
+        self.client.get("/api/workspace").close()
+        upload_response = self.client.post(
+            "/api/workspace/uploads",
+            data={"midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid")},
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(upload_response.close)
+        file_id = upload_response.get_json()["upload"]["file_id"]
+
+        response = self.client.post(
+            "/api/synthesis-jobs",
+            json={
+                "file_id": file_id,
+                "config": self._workspace_config(),
+            },
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(202, response.status_code)
+        payload = response.get_json()
+        self.assertEqual("ready", payload["status"])
+        self.assertEqual("lead_pulse.wav", payload["download_name"])
+        self.assertNotIn("workspace_id", payload)
+        self.assertNotIn("id", payload)
+        output_path = self._workspace_output_path(payload["job_id"])
+        self.assertTrue(output_path.exists())
+
+        other_client = web_app.app.test_client()
+        other_client.get("/api/workspace").close()
+        not_owned_response = other_client.get(f"/api/synthesis-jobs/{payload['job_id']}")
+        not_owned_response.close()
+        self.assertEqual(404, not_owned_response.status_code)
+        self.assertEqual("not_found", not_owned_response.get_json()["error"]["code"])
+
+        download_response = self.client.get(payload["download_url"])
+        self.addCleanup(download_response.close)
+        self.assertEqual(200, download_response.status_code)
+        self.assertEqual(b"RIFF", download_response.data[:4])
+
+        delete_response = self.client.delete(payload["delete_url"])
+        self.addCleanup(delete_response.close)
+        self.assertEqual(204, delete_response.status_code)
+        self.assertFalse(output_path.exists())
+
+    def test_api_workspace_converted_file_limit(self):
+        self.client.get("/api/workspace").close()
+        web_app.app.config["WEB_WORKSPACE_MAX_CONVERTED_FILES"] = 1
+        upload_response = self.client.post(
+            "/api/workspace/uploads",
+            data={"midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid")},
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(upload_response.close)
+        file_id = upload_response.get_json()["upload"]["file_id"]
+
+        first_response = self.client.post(
+            "/api/synthesis-jobs",
+            json={"file_id": file_id, "config": self._workspace_config()},
+        )
+        self.addCleanup(first_response.close)
+        self.assertEqual(202, first_response.status_code)
+
+        quota_response = self.client.post(
+            "/api/synthesis-jobs",
+            json={"file_id": file_id, "config": self._workspace_config()},
+        )
+        self.addCleanup(quota_response.close)
+        self.assertEqual(409, quota_response.status_code)
+        self.assertEqual("workspace_converted_limit", quota_response.get_json()["error"]["code"])
+
+    def test_workspace_sqlite_connection_pragmas(self):
+        service = web_app._workspace_service()
+        with service.connect() as connection:
+            foreign_keys = connection.execute("PRAGMA foreign_keys").fetchone()[0]
+            journal_mode = connection.execute("PRAGMA journal_mode").fetchone()[0]
+            busy_timeout = connection.execute("PRAGMA busy_timeout").fetchone()[0]
+
+        self.assertEqual(1, foreign_keys)
+        self.assertEqual("wal", journal_mode.lower())
+        self.assertEqual(5000, busy_timeout)
 
     def test_api_synthesis_job_returns_api_status_download_and_delete_links(self):
         response = self.client.post(
@@ -90,7 +336,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(b"RIFF", download_response.data[:4])
         self.assertIn("lead_sine.wav", download_response.headers["Content-Disposition"])
 
-        output_path = Path(web_app._job_dir(payload["job_id"])) / "output.wav"
+        output_path = self._workspace_output_path(payload["job_id"])
         self.assertTrue(output_path.exists())
         delete_response = self.client.delete(payload["delete_url"])
         self.addCleanup(delete_response.close)
@@ -99,8 +345,8 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
 
         expired_response = self.client.get(f"/api/synthesis-jobs/{payload['job_id']}")
         self.addCleanup(expired_response.close)
-        self.assertEqual(410, expired_response.status_code)
-        self.assertEqual("expired", expired_response.get_json()["status"])
+        self.assertEqual(404, expired_response.status_code)
+        self.assertEqual("not_found", expired_response.get_json()["error"]["code"])
 
     def test_api_synthesis_job_returns_structured_validation_errors(self):
         missing_response = self.client.post(
@@ -303,6 +549,10 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("translateStaticSurface", body)
         self.assertIn("TRANSLATIONS_BY_LOCALE[nextLocale]", body)
         self.assertIn("window.history.replaceState", body)
+        self.assertIn("WORKSPACE_API_URL = '/api/workspace'", body)
+        self.assertIn("restoreWorkspace", body)
+        self.assertIn("fetch(`${WORKSPACE_API_URL}/uploads`", body)
+        self.assertIn("fetch(`${WORKSPACE_API_URL}/config`", body)
         self.assertIn("SYNTHESIS_JOBS_API_URL = '/api/synthesis-jobs'", body)
         self.assertIn("fetch(SYNTHESIS_JOBS_API_URL", body)
         self.assertIn("fetch(`${SYNTHESIS_JOBS_API_URL}/${jobId}`)", body)
@@ -313,6 +563,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertNotIn("persistLanguageSwitchState", body)
         self.assertNotIn("restoreLanguageSwitchState", body)
         self.assertNotIn("pendingLanguageSwitchState", body)
+        self.assertNotIn("window.addEventListener('beforeunload'", body)
         self.assertIn("SUPPORTED_LOCALES.includes(selectedLocale)", body)
         self.assertIn("window.confirm(t('converted.clear_confirm'))", body)
         self.assertIn("layer-control-grid", body)
@@ -900,6 +1151,43 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
             midi_path = Path(temp_dir) / "test.mid"
             midi.write(str(midi_path))
             return midi_path.read_bytes()
+
+    def _workspace_config(self):
+        return {
+            "schema": "octabit.workspace_config.v1",
+            "sample_rate": 48000,
+            "layers": [{
+                "type": "pulse",
+                "duty": 0.5,
+                "volume": 1.0,
+                "curve_enabled": False,
+                "frequency_curve": [
+                    {
+                        "frequency_hz": web_app.midi_to_wave.MIN_CURVE_FREQUENCY_HZ,
+                        "gain_db": 0.0,
+                    },
+                    {
+                        "frequency_hz": web_app.midi_to_wave.MAX_CURVE_FREQUENCY_HZ,
+                        "gain_db": 0.0,
+                    },
+                ],
+            }],
+        }
+
+    def _workspace_upload_path(self, file_id):
+        matches = self._workspace_upload_paths(file_id)
+        if len(matches) != 1:
+            self.fail(f"Expected one upload path for {file_id}, found {matches}")
+        return matches[0]
+
+    def _workspace_upload_paths(self, file_id):
+        return list(Path(self.job_root.name).glob(f"workspaces/*/uploads/{file_id}.mid"))
+
+    def _workspace_output_path(self, job_id):
+        matches = list(Path(self.job_root.name).glob(f"workspaces/*/jobs/{job_id}/output.wav"))
+        if len(matches) != 1:
+            self.fail(f"Expected one output path for {job_id}, found {matches}")
+        return matches[0]
 
     def _load_catalog(self, locale):
         catalog_path = Path(web_app.I18N_DIR) / f"{locale}.json"
