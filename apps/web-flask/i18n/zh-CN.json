@@ -19,7 +19,7 @@
   "queue.title": "当前文件",
   "queue.drop_prompt": "上传 MIDI 文件",
   "queue.drop_hint": "点击或拖入 .mid / .midi 文件",
-  "queue.empty": "还没有排队的 MIDI 文件",
+  "queue.empty": "还没有排队的 MIDI 文件。",
   "queue.clear": "清空队列",
   "queue.keep_after": "合成后保留队列",
   "queue.remove_file": "移除 {filename}",

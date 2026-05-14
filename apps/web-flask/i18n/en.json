@@ -19,7 +19,7 @@
   "queue.title": "Current File(s)",
   "queue.drop_prompt": "Upload MIDI File",
   "queue.drop_hint": "Click or drag .mid / .midi files here",
-  "queue.empty": "No MIDI files queued",
+  "queue.empty": "No MIDI files queued.",
   "queue.clear": "Clear Queue",
   "queue.keep_after": "Keep queue after synthesising.",
   "queue.remove_file": "Remove {filename}",

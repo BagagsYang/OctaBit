@@ -19,7 +19,7 @@
   "queue.title": "Fichier(s) actuel(s)",
   "queue.drop_prompt": "Importer un fichier MIDI",
   "queue.drop_hint": "Cliquez ou glissez des fichiers .mid / .midi ici",
-  "queue.empty": "Aucun fichier MIDI en file",
+  "queue.empty": "Aucun fichier MIDI en file.",
   "queue.clear": "Vider la file",
   "queue.keep_after": "Conserver la file après la synthèse",
   "queue.remove_file": "Retirer {filename}",
