@@ -29,6 +29,12 @@
         { type: 'triangle', duty: 0.5, volume: 1.0 },
         { type: 'sawtooth', duty: 0.5, volume: 1.0 },
     ];
+    const waveTypeOptions = [
+        ['pulse', 'wave.pulse'],
+        ['sine', 'wave.sine'],
+        ['sawtooth', 'wave.sawtooth'],
+        ['triangle', 'wave.triangle'],
+    ];
     const maxLayers = layerPresets.length;
 
     function t(key, params = {}) {
@@ -608,15 +614,26 @@
         return points[points.length - 1].gain_db;
     }
 
-    function createWaveOptions(currentType) {
-        const options = [
-            ['pulse', t('wave.pulse')],
-            ['sine', t('wave.sine')],
-            ['sawtooth', t('wave.sawtooth')],
-            ['triangle', t('wave.triangle')],
-        ];
-        return options.map(([value, label]) => `
-            <option value="${value}" ${currentType === value ? 'selected' : ''}>${label}</option>
+    function activeLayerTypes(excludedLayerIndex = null) {
+        return new Set(layers.slice(0, layerCount)
+            .filter((layer, index) => index !== excludedLayerIndex)
+            .map((layer) => layer.type));
+    }
+
+    function firstUnusedWaveType() {
+        const usedTypes = activeLayerTypes();
+        const option = waveTypeOptions.find(([value]) => !usedTypes.has(value));
+        return option ? option[0] : null;
+    }
+
+    function createWaveOptions(currentType, layerIndex) {
+        const usedTypes = activeLayerTypes(layerIndex);
+        return waveTypeOptions.map(([value, labelKey]) => `
+            <option
+                value="${value}"
+                ${currentType === value ? 'selected' : ''}
+                ${usedTypes.has(value) ? 'disabled' : ''}
+            >${t(labelKey)}</option>
         `).join('');
     }
 
@@ -786,7 +803,7 @@
                             id="waveType${layerIndex}"
                             onchange="updateLayerType(${layerIndex}, this.value)"
                         >
-                            ${createWaveOptions(layer.type)}
+                            ${createWaveOptions(layer.type, layerIndex)}
                         </select>
                     </div>
                     <div class="field-block" style="display: ${layer.type === 'pulse' ? 'grid' : 'none'};">
@@ -929,7 +946,7 @@
     }
 
     function updateLayerButtons() {
-        addLayerBtn.disabled = layerCount === maxLayers;
+        addLayerBtn.disabled = layerCount === maxLayers || !firstUnusedWaveType();
         removeLayerBtn.disabled = layerCount === 1;
         removeLayerBtn.style.display = 'inline-flex';
     }
@@ -949,6 +966,11 @@
     }
 
     function updateLayerType(layerIndex, value) {
+        const validWaveType = waveTypeOptions.some(([optionValue]) => optionValue === value);
+        if (!validWaveType || activeLayerTypes(layerIndex).has(value)) {
+            renderLayers();
+            return;
+        }
         layers[layerIndex].type = value;
         renderLayers();
     }
@@ -1068,6 +1090,10 @@
 
     window.addLayer = () => {
         if (layerCount >= maxLayers) return;
+        const unusedType = firstUnusedWaveType();
+        if (!unusedType) return;
+        layers[layerCount] = createDefaultLayer(layerCount);
+        layers[layerCount].type = unusedType;
         layerCount += 1;
         layers[layerCount - 1].active = true;
         renderLayers();
