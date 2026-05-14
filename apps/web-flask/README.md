@@ -2,7 +2,7 @@
 
 Language/语言: English | [简体中文](./README.zh-CN.md)
 
-This folder contains the primary browser-distributed version of OctaBit. The public site for the service is `https://octabit.cc`.
+This folder contains the primary browser-distributed version of OctaBit. The public site for the service is <https://octabit.cc>.
 
 ## Responsibilities
 

@@ -2,7 +2,7 @@ OCTABIT USER GUIDE
 
 This guide covers the Flask/browser version of OctaBit.
 
-Official site: https://octabit.cc
+Official site: <https://octabit.cc>
 
 Project layout:
 - `apps/web-flask/` contains the current active browser interface and web service.

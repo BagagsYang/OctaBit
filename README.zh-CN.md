@@ -2,7 +2,7 @@
 
 Language/语言: [English](./README.md) | 简体中文
 
-OctaBit 是一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 工具。官方网站是 `https://octabit.cc`。
+OctaBit 是一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 工具。官方网站是 <https://octabit.cc>。
 
 该仓库是为 OctaBit 重新整理后的单体仓库。当前活跃目标是 `apps/web-flask/` 中的 Flask/Gunicorn Web 服务，并通过 Docker 面向服务器部署。原生 macOS 和 Windows 应用已 deprecated/paused，不再作为活跃开发目标；代码保留在仓库中，用于参考或未来可能的恢复。Python 参考渲染器位于 `core/` 下，共享预览资源位于 `assets/` 下。
 
