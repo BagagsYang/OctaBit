@@ -40,6 +40,21 @@ Please open an issue first for substantial changes, including:
 In the issue, describe the problem, the intended behavior, and the area of the
 repository you expect to touch.
 
+## Branch workflow
+
+OctaBit uses a simple long-term branch workflow:
+
+- `main` is the stable, deployable branch used by the live server. Keep it in a
+  state that can be deployed.
+- `dev` is the active development branch for ongoing work and larger changes.
+- Ordinary development should happen on `dev` or on short-lived feature
+  branches based on `dev`.
+- Merge larger changes into `main` only after they have been reviewed and
+  tested on `dev` or a feature branch.
+
+Avoid long-lived release branches or heavyweight process unless maintainers
+explicitly agree that a specific change needs it.
+
 ## Development setup
 
 Run commands from the repository root unless a document says otherwise.
