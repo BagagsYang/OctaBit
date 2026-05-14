@@ -41,12 +41,17 @@ apps\web-flask\Launch_Synthesiser.bat
 
 This app serves preview WAVs from the shared asset folder and should not duplicate renderer logic.
 
-## Current upload contract
+## Current API contract
 
-`POST /synthesise` uses `multipart/form-data` with:
+The browser UI now uses the `/api/synthesis-jobs` routes for upload, status
+polling, WAV download, and manual cleanup. The older `/synthesise` and
+`/synthesise/jobs*` routes remain available for compatibility. The full
+contract lives in `../../docs/api-contract.md`.
+
+`POST /api/synthesis-jobs` uses `multipart/form-data` with:
 
 - `midi_file`: uploaded `.mid` or `.midi`
-- `rate`: sample rate integer
+- `rate`: one of `44100`, `48000`, or `96000`
 - `layers_json`: JSON array of layer objects
 
 Each layer object contains:
@@ -58,9 +63,17 @@ Each layer object contains:
 
 The browser UI stores layer state in JavaScript and serialises it into `layers_json`.
 
-For server deployments, the browser UI uses the render job endpoints instead of
-waiting for a single request to upload, render, and download:
+Current API routes:
 
+- `GET /api/health`: lightweight JSON health check.
+- `POST /api/synthesis-jobs`: accepts the form fields above and returns a job id.
+- `GET /api/synthesis-jobs/<job_id>`: reports queued, rendering, ready, failed, or expired status.
+- `GET /api/synthesis-jobs/<job_id>/download`: downloads the ready WAV file.
+- `DELETE /api/synthesis-jobs/<job_id>`: removes the temporary server file when a user clears converted files.
+
+Compatibility routes:
+
+- `POST /synthesise`: single-request upload, render, and download path.
 - `POST /synthesise/jobs`: accepts the same form fields and returns a job id.
 - `GET /synthesise/jobs/<job_id>`: reports queued, rendering, ready, failed, or expired status.
 - `GET /synthesise/jobs/<job_id>/download`: downloads the ready WAV file.
@@ -69,6 +82,32 @@ waiting for a single request to upload, render, and download:
 Ready job files are temporary and expire after `WEB_DOWNLOAD_TTL_SECONDS`, which
 defaults to 1800 seconds. The browser also deletes ready server files immediately
 when the user clears the converted files list.
+
+API errors use `{"error":{"code":"...","message":"..."}}`. Compatibility routes
+keep their existing `{"error":"..."}` response shape unless they are explicitly
+migrated later.
+
+## Production notes
+
+The current production model can run without Docker:
+
+- Install `apps/web-flask/requirements.txt` into the repo-local virtual environment.
+- Run Gunicorn against `app:app` from `apps/web-flask/`.
+- Bind Gunicorn privately to `127.0.0.1:8000`.
+- Manage Gunicorn with systemd, for example through the `octabit-web` service.
+- Use Caddy as the public reverse proxy to `127.0.0.1:8000`.
+- Keep `WEB_SYNTHESISE_JOB_ROOT`, `WEB_DOWNLOAD_TTL_SECONDS`,
+  `WEB_MAX_UPLOAD_BYTES`, and the Gunicorn timeout aligned with expected upload,
+  render, and download behaviour.
+
+Example Gunicorn shape:
+
+```bash
+./.venv/bin/python3 -m gunicorn --chdir apps/web-flask --bind 127.0.0.1:8000 --workers 2 --timeout 600 app:app
+```
+
+The Docker files under `../../deploy/web-flask/` and `../../compose.web.yml`
+remain an alternate deployment path.
 
 ## Output naming
 

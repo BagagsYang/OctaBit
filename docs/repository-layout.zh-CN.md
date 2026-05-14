@@ -5,7 +5,7 @@ Language/语言: [English](./repository-layout.md) | 简体中文
 该仓库是 OctaBit 的单体仓库。OctaBit 是一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 工具。当前活跃目标是
 `apps/web-flask/` 中的公开 Flask/Gunicorn Web 服务，并面向 `octabit.cc` 发布。原生 macOS 和 Windows 应用已
 deprecated/paused，不再作为活跃开发目标；代码保留用于参考或未来可能的恢复。仓库还包含规范
-Python 渲染器、共享预览资源、部署文件和发布文档。
+Python 渲染器、共享预览资源、API 契约文档、部署文件和发布文档。
 
 ## 顶层结构
 
@@ -17,7 +17,7 @@ Python 渲染器、共享预览资源、部署文件和发布文档。
 | `apps/` | 当前 Web 应用目标、保留的原生应用代码和桌面占位目录。 |
 | `core/python-renderer/` | 规范 Python MIDI 转 WAV 渲染器和对齐参考实现。 |
 | `assets/previews/` | 各应用共享的规范波形预览 WAV 文件。 |
-| `docs/` | 仓库结构说明、许可证审计和评审报告。 |
+| `docs/` | API 契约、仓库结构说明、许可证审计和评审报告。 |
 | `deploy/web-flask/` | Flask Web 应用的 Docker 部署文档和 Dockerfile。 |
 | `.github/workflows/` | 保留的 Windows 发布构建 GitHub Actions 工作流。 |
 | `compose.web.yml` | Flask Web 部署的 Docker Compose 入口。 |
@@ -34,7 +34,8 @@ Python 渲染器、共享预览资源、部署文件和发布文档。
 
 项目当前活跃的 Flask / 浏览器 UI 和可部署 Web 服务。
 
-- `app.py`：Flask 入口、上传处理、合成端点、预览路由和服务器端渲染任务端点。
+- `app.py`：Flask 入口、上传处理、合成/API 端点、预览路由和服务器端渲染任务端点。
+- `synthesis_jobs.py`：基于文件系统的合成任务生命周期、清理和渲染线程编排。
 - `templates/index.html`：浏览器 UI 外壳。
 - `static/css/` 和 `static/js/`：Web 专用样式和浏览器行为。
 - `i18n/`：英文、法文和简体中文 UI 文本的 JSON 目录。
@@ -105,6 +106,7 @@ Web 应用和保留的原生应用路径使用的规范预览 WAV 资源。`asse
 
 ## 文档和生成产物
 
+- `docs/api-contract.md` 和 `docs/api-contract.zh-CN.md`：当前 Web API 契约、兼容路由说明、任务载荷和公开演示安全边界。
 - `docs/repository-layout.md` 和 `docs/repository-layout.zh-CN.md`：当前仓库结构的英文和简体中文说明。
 - `docs/licensing-audit.md`：面向仓库和发布规划的许可证与署名审计。
 - `docs/reviews/windows-app-review.md`：Windows 评审记录。
@@ -154,7 +156,11 @@ dotnet publish apps/windows/src/Midi8BitSynthesiser.App/Midi8BitSynthesiser.App.
 已暂停的 macOS 应用通过 Xcode 使用 `MIDI8BitSynthesiser` scheme 构建。Xcode 构建阶段会运行
 `apps/macos/macos/build_desktop_resources.sh`。
 
-Flask Docker 部署使用：
+当前非 Docker 生产路径可以从 Python 虚拟环境运行 Flask Web 应用：Gunicorn 私有绑定到
+`127.0.0.1:8000`，systemd 管理服务，Caddy 将公开流量反向代理到该私有 Gunicorn
+监听地址。上传目录、任务 TTL、最大上传大小和 Gunicorn timeout 应与当前合成任务行为保持一致。
+
+Docker 部署仍保留为另一种路径：
 
 ```bash
 docker compose -f compose.web.yml up -d --build
