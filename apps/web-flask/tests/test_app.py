@@ -21,6 +21,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
             "SYNTHESISE_JOB_ROOT": web_app.app.config.get("SYNTHESISE_JOB_ROOT"),
             "SYNTHESISE_JOBS_INLINE": web_app.app.config.get("SYNTHESISE_JOBS_INLINE"),
             "WEB_DOWNLOAD_TTL_SECONDS": web_app.app.config.get("WEB_DOWNLOAD_TTL_SECONDS"),
+            "MAX_CONTENT_LENGTH": web_app.app.config.get("MAX_CONTENT_LENGTH"),
         }
         self.job_root = tempfile.TemporaryDirectory()
         self.addCleanup(self.job_root.cleanup)
@@ -36,6 +37,19 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
                 web_app.app.config.pop(key, None)
             else:
                 web_app.app.config[key] = value
+
+    def test_api_health_returns_ok(self):
+        response = self.client.get("/api/health")
+        self.addCleanup(response.close)
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            {
+                "status": "ok",
+                "service": "octabit-web",
+            },
+            response.get_json(),
+        )
 
     def test_index_falls_back_to_english(self):
         response = self.client.get("/", headers={"Accept-Language": "de-DE,de;q=0.9"})
@@ -310,7 +324,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         response = self.client.post(
             "/synthesise",
             data={
-                "rate": "16000",
+                "rate": "44100",
                 "midi_file": (io.BytesIO(b""), "empty.mid"),
             },
             content_type="multipart/form-data",
@@ -324,7 +338,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         response = self.client.post(
             "/synthesise",
             data={
-                "rate": "16000",
+                "rate": "44100",
                 "layers_json": json.dumps([{
                     "type": "sine",
                     "duty": 0.5,
@@ -346,7 +360,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         response = self.client.post(
             "/synthesise/jobs?lang=zh-CN",
             data={
-                "rate": "16000",
+                "rate": "44100",
                 "midi_file": (io.BytesIO(b""), "empty.mid"),
             },
             content_type="multipart/form-data",
@@ -360,11 +374,83 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         )
         self.assertEqual([], list(Path(self.job_root.name).iterdir()))
 
-    def test_synthesise_job_returns_ready_status_and_download(self):
+    def test_synthesise_job_rejects_unsupported_extension_before_starting_job(self):
+        response = self.client.post(
+            "/synthesise/jobs",
+            data={
+                "rate": "44100",
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.txt"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(
+            "Unsupported file type. Upload a .mid or .midi file.",
+            response.get_json()["error"],
+        )
+        self.assertEqual([], list(Path(self.job_root.name).iterdir()))
+
+    def test_synthesise_job_rejects_invalid_rate_before_starting_job(self):
         response = self.client.post(
             "/synthesise/jobs",
             data={
                 "rate": "16000",
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("Unsupported sample rate", response.get_json()["error"])
+        self.assertEqual([], list(Path(self.job_root.name).iterdir()))
+
+    def test_synthesise_job_rejects_invalid_layers_before_starting_job(self):
+        response = self.client.post(
+            "/synthesise/jobs",
+            data={
+                "rate": "44100",
+                "layers_json": json.dumps([{
+                    "type": "sine",
+                    "duty": 0.5,
+                    "volume": 1.0,
+                    "frequency_curve": [
+                        {"frequency_hz": 440.0, "gain_db": 0.0},
+                        {"frequency_hz": 440.0, "gain_db": -6.0},
+                    ],
+                }]),
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("strictly increasing", response.get_json()["error"])
+        self.assertEqual([], list(Path(self.job_root.name).iterdir()))
+
+    def test_synthesise_rejects_oversized_upload(self):
+        web_app.app.config["MAX_CONTENT_LENGTH"] = 128
+        response = self.client.post(
+            "/synthesise",
+            data={
+                "rate": "44100",
+                "midi_file": (io.BytesIO(b"x" * 512), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(413, response.status_code)
+        self.assertEqual("Uploaded file is too large.", response.get_json()["error"])
+
+    def test_synthesise_job_returns_ready_status_and_download(self):
+        response = self.client.post(
+            "/synthesise/jobs",
+            data={
+                "rate": "44100",
                 "layers_json": json.dumps([{
                     "type": "sine",
                     "duty": 0.5,
@@ -382,6 +468,9 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual("ready", payload["status"])
         self.assertEqual("lead_sine.wav", payload["download_name"])
         self.assertGreater(payload["size_bytes"], 4)
+        self.assertIn("created_at", payload)
+        self.assertIn("updated_at", payload)
+        self.assertIn("expires_at", payload)
         self.assertIn("/synthesise/jobs/", payload["download_url"])
         self.assertIn("/synthesise/jobs/", payload["delete_url"])
 
@@ -401,7 +490,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         response = self.client.post(
             "/synthesise/jobs",
             data={
-                "rate": "16000",
+                "rate": "44100",
                 "layers_json": json.dumps([{
                     "type": "sine",
                     "duty": 0.5,
@@ -434,19 +523,19 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual("expired", download_response.get_json()["status"])
 
     def test_synthesise_job_reports_failed_status(self):
-        with self.assertLogs(web_app.app.logger.name, level="WARNING") as logs:
+        with (
+            mock.patch.object(web_app, "_render_uploaded_wav", side_effect=ValueError("renderer exploded")),
+            self.assertLogs(web_app.app.logger.name, level="WARNING") as logs,
+        ):
             response = self.client.post(
                 "/synthesise/jobs",
                 data={
-                    "rate": "16000",
+                    "rate": "44100",
                     "layers_json": json.dumps([{
                         "type": "sine",
                         "duty": 0.5,
                         "volume": 1.0,
-                        "frequency_curve": [
-                            {"frequency_hz": 440.0, "gain_db": 0.0},
-                            {"frequency_hz": 440.0, "gain_db": -6.0},
-                        ],
+                        "frequency_curve": [],
                     }]),
                     "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
                 },
@@ -457,8 +546,8 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(202, response.status_code)
         payload = response.get_json()
         self.assertEqual("failed", payload["status"])
-        self.assertIn("strictly increasing", payload["error"])
-        self.assertTrue(any("strictly increasing" in message for message in logs.output))
+        self.assertEqual("renderer exploded", payload["error"])
+        self.assertTrue(any("renderer exploded" in message for message in logs.output))
 
         download_response = self.client.get(f"/synthesise/jobs/{payload['job_id']}/download")
         self.addCleanup(download_response.close)
@@ -473,7 +562,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
             response = self.client.post(
                 "/synthesise/jobs",
                 data={
-                    "rate": "16000",
+                    "rate": "44100",
                     "layers_json": json.dumps([{
                         "type": "sine",
                         "duty": 0.5,
@@ -501,7 +590,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         response = self.client.post(
             "/synthesise/jobs",
             data={
-                "rate": "16000",
+                "rate": "44100",
                 "layers_json": json.dumps([{
                     "type": "sine",
                     "duty": 0.5,
@@ -527,7 +616,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         response = self.client.post(
             "/synthesise",
             data={
-                "rate": "16000",
+                "rate": "44100",
                 "layers_json": json.dumps([{
                     "type": "sine",
                     "duty": 0.5,
@@ -564,7 +653,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         response = self.client.post(
             "/synthesise",
             data={
-                "rate": "16000",
+                "rate": "44100",
                 "layers_json": json.dumps(layers),
                 "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
             },
@@ -579,7 +668,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         response = self.client.post(
             "/synthesise",
             data={
-                "rate": "16000",
+                "rate": "44100",
                 "layers_json": json.dumps([
                     {
                         "type": "pulse",
@@ -620,7 +709,7 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         response = self.client.post(
             "/synthesise",
             data={
-                "rate": "16000",
+                "rate": "44100",
                 "layers_json": json.dumps([{
                     "type": "sine",
                     "duty": 0.5,
