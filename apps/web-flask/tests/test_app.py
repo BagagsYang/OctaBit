@@ -51,6 +51,152 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
             response.get_json(),
         )
 
+    def test_api_synthesis_job_returns_api_status_download_and_delete_links(self):
+        response = self.client.post(
+            "/api/synthesis-jobs",
+            data={
+                "rate": "44100",
+                "layers_json": json.dumps([{
+                    "type": "sine",
+                    "duty": 0.5,
+                    "volume": 1.0,
+                    "frequency_curve": [],
+                }]),
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(202, response.status_code)
+        payload = response.get_json()
+        self.assertEqual("ready", payload["status"])
+        self.assertEqual("lead_sine.wav", payload["download_name"])
+        self.assertIn("/api/synthesis-jobs/", payload["download_url"])
+        self.assertIn("/api/synthesis-jobs/", payload["delete_url"])
+        self.assertNotIn("/synthesise/jobs/", payload["download_url"])
+        self.assertNotIn("/synthesise/jobs/", payload["delete_url"])
+
+        status_response = self.client.get(f"/api/synthesis-jobs/{payload['job_id']}")
+        self.addCleanup(status_response.close)
+        self.assertEqual(200, status_response.status_code)
+        status_payload = status_response.get_json()
+        self.assertEqual("ready", status_payload["status"])
+        self.assertIn("/api/synthesis-jobs/", status_payload["download_url"])
+
+        download_response = self.client.get(payload["download_url"])
+        self.addCleanup(download_response.close)
+        self.assertEqual(200, download_response.status_code)
+        self.assertEqual(b"RIFF", download_response.data[:4])
+        self.assertIn("lead_sine.wav", download_response.headers["Content-Disposition"])
+
+        output_path = Path(web_app._job_dir(payload["job_id"])) / "output.wav"
+        self.assertTrue(output_path.exists())
+        delete_response = self.client.delete(payload["delete_url"])
+        self.addCleanup(delete_response.close)
+        self.assertEqual(204, delete_response.status_code)
+        self.assertFalse(output_path.exists())
+
+        expired_response = self.client.get(f"/api/synthesis-jobs/{payload['job_id']}")
+        self.addCleanup(expired_response.close)
+        self.assertEqual(410, expired_response.status_code)
+        self.assertEqual("expired", expired_response.get_json()["status"])
+
+    def test_api_synthesis_job_returns_structured_validation_errors(self):
+        missing_response = self.client.post(
+            "/api/synthesis-jobs",
+            data={},
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(missing_response.close)
+        self.assertEqual(400, missing_response.status_code)
+        self.assertEqual("missing_midi_file", missing_response.get_json()["error"]["code"])
+
+        extension_response = self.client.post(
+            "/api/synthesis-jobs",
+            data={
+                "rate": "44100",
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.txt"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(extension_response.close)
+        self.assertEqual(415, extension_response.status_code)
+        self.assertEqual("unsupported_file_type", extension_response.get_json()["error"]["code"])
+
+        rate_response = self.client.post(
+            "/api/synthesis-jobs",
+            data={
+                "rate": "16000",
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(rate_response.close)
+        self.assertEqual(422, rate_response.status_code)
+        self.assertEqual("invalid_sample_rate", rate_response.get_json()["error"]["code"])
+
+        layers_response = self.client.post(
+            "/api/synthesis-jobs",
+            data={
+                "rate": "44100",
+                "layers_json": json.dumps([{
+                    "type": "sine",
+                    "duty": 0.5,
+                    "volume": 1.0,
+                    "frequency_curve": [
+                        {"frequency_hz": 440.0, "gain_db": 0.0},
+                        {"frequency_hz": 440.0, "gain_db": -6.0},
+                    ],
+                }]),
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(layers_response.close)
+        self.assertEqual(422, layers_response.status_code)
+        self.assertEqual("invalid_layers", layers_response.get_json()["error"]["code"])
+
+        empty_response = self.client.post(
+            "/api/synthesis-jobs",
+            data={
+                "rate": "44100",
+                "midi_file": (io.BytesIO(b""), "empty.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(empty_response.close)
+        self.assertEqual(400, empty_response.status_code)
+        self.assertEqual("empty_midi_file", empty_response.get_json()["error"]["code"])
+        self.assertEqual([], list(Path(self.job_root.name).iterdir()))
+
+    def test_api_synthesis_job_rejects_invalid_job_ids(self):
+        for method, path in (
+            ("get", "/api/synthesis-jobs/not-a-job"),
+            ("delete", "/api/synthesis-jobs/not-a-job"),
+            ("get", "/api/synthesis-jobs/not-a-job/download"),
+        ):
+            with self.subTest(method=method, path=path):
+                response = getattr(self.client, method)(path)
+                self.addCleanup(response.close)
+                self.assertEqual(400, response.status_code)
+                self.assertEqual("invalid_job_id", response.get_json()["error"]["code"])
+
+    def test_api_synthesis_job_rejects_oversized_upload_with_structured_error(self):
+        web_app.app.config["MAX_CONTENT_LENGTH"] = 128
+        response = self.client.post(
+            "/api/synthesis-jobs",
+            data={
+                "rate": "44100",
+                "midi_file": (io.BytesIO(b"x" * 512), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(413, response.status_code)
+        self.assertEqual("upload_too_large", response.get_json()["error"]["code"])
+
     def test_index_falls_back_to_english(self):
         response = self.client.get("/", headers={"Accept-Language": "de-DE,de;q=0.9"})
         self.addCleanup(response.close)
@@ -157,6 +303,13 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertIn("translateStaticSurface", body)
         self.assertIn("TRANSLATIONS_BY_LOCALE[nextLocale]", body)
         self.assertIn("window.history.replaceState", body)
+        self.assertIn("SYNTHESIS_JOBS_API_URL = '/api/synthesis-jobs'", body)
+        self.assertIn("fetch(SYNTHESIS_JOBS_API_URL", body)
+        self.assertIn("fetch(`${SYNTHESIS_JOBS_API_URL}/${jobId}`)", body)
+        self.assertIn("responseErrorMessage(errorPayload, response.statusText)", body)
+        self.assertIn("payload.error.message || payload.error.code", body)
+        self.assertNotIn("fetch('/synthesise/jobs'", body)
+        self.assertNotIn("fetch(`/synthesise/jobs/${jobId}`)", body)
         self.assertNotIn("persistLanguageSwitchState", body)
         self.assertNotIn("restoreLanguageSwitchState", body)
         self.assertNotIn("pendingLanguageSwitchState", body)

@@ -37,6 +37,8 @@ DEFAULT_JOB_ROOT = os.path.join(tempfile.gettempdir(), "octabit-jobs")
 DEFAULT_MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 ALLOWED_MIDI_EXTENSIONS = {".mid", ".midi"}
 ALLOWED_SAMPLE_RATES = {44100, 48000, 96000}
+LEGACY_SYNTHESIS_JOBS_ROUTE = "/synthesise/jobs"
+API_SYNTHESIS_JOBS_ROUTE = "/api/synthesis-jobs"
 
 if PYTHON_RENDERER_DIR not in sys.path:
     sys.path.insert(0, PYTHON_RENDERER_DIR)
@@ -131,6 +133,10 @@ def _json_api_error(code, message, status_code):
 
 def _json_legacy_error(message):
     return jsonify({"error": message})
+
+
+def _api_error_response(code, message, status_code):
+    return _json_api_error(code, message, status_code)
 
 
 def _normalise_locale(raw_locale):
@@ -247,6 +253,45 @@ def _validate_midi_upload(translations):
     return uploaded_file, None, None
 
 
+def _validate_midi_upload_for_api(translations):
+    if "midi_file" not in request.files:
+        return None, _api_error_response(
+            "missing_midi_file",
+            translations["errors.no_midi_file_uploaded"],
+            400,
+        )
+
+    uploaded_file = request.files["midi_file"]
+    if uploaded_file.filename == "":
+        return None, _api_error_response(
+            "no_selected_file",
+            translations["errors.no_selected_file"],
+            400,
+        )
+
+    extension = os.path.splitext(uploaded_file.filename)[1].lower()
+    if extension not in ALLOWED_MIDI_EXTENSIONS:
+        return None, _api_error_response(
+            "unsupported_file_type",
+            "Unsupported file type. Upload a .mid or .midi file.",
+            415,
+        )
+
+    return uploaded_file, None
+
+
+def _parse_synthesis_options_for_api(form):
+    try:
+        return _parse_synthesis_options(form), None
+    except ValueError as exc:
+        message = str(exc)
+        if "sample rate" in message:
+            code = "invalid_sample_rate"
+        else:
+            code = "invalid_layers"
+        return None, _api_error_response(code, message, 422)
+
+
 def _build_original_filename(uploaded_filename):
     if not uploaded_filename:
         return "output"
@@ -308,7 +353,7 @@ def _cleanup_expired_jobs():
 
 
 def _job_payload(metadata):
-    return _job_service().job_payload(metadata)
+    return _job_service().job_payload(metadata, route_base=LEGACY_SYNTHESIS_JOBS_ROUTE)
 
 
 def _initial_job_metadata(job_id, uploaded_filename):
@@ -339,6 +384,96 @@ def api_health():
         "status": "ok",
         "service": "octabit-web",
     })
+
+
+@app.route("/api/synthesis-jobs", methods=["POST"])
+def api_create_synthesis_job():
+    _locale, translations, _is_explicit_override = _get_locale_context()
+    file, error_response = _validate_midi_upload_for_api(translations)
+    if error_response is not None:
+        return error_response
+
+    _options, error_response = _parse_synthesis_options_for_api(request.form)
+    if error_response is not None:
+        return error_response
+
+    _cleanup_expired_jobs()
+    job_service = _job_service()
+    job_id, input_path = job_service.prepare_job()
+
+    try:
+        file.save(input_path)
+        if os.path.getsize(input_path) == 0:
+            _delete_job(job_id)
+            return _api_error_response(
+                "empty_midi_file",
+                translations["errors.empty_midi_file"],
+                400,
+            )
+        _write_job_metadata(job_id, _initial_job_metadata(job_id, file.filename))
+        _start_synthesise_job(job_id, input_path, request.form.to_dict(flat=True), file.filename)
+    except ValueError as exc:
+        _delete_job(job_id)
+        return _api_error_response("invalid_request", str(exc), 400)
+    except Exception as exc:
+        _delete_job(job_id)
+        return _api_error_response("internal_error", str(exc), 500)
+
+    metadata = _read_job_metadata(job_id)
+    payload = job_service.job_payload(metadata, route_base=API_SYNTHESIS_JOBS_ROUTE)
+    return _json_accepted(payload)
+
+
+@app.route("/api/synthesis-jobs/<job_id>", methods=["GET"])
+def api_get_synthesis_job(job_id):
+    if not _is_valid_job_id(job_id):
+        return _api_error_response("invalid_job_id", "Invalid job id.", 400)
+
+    metadata = _read_job_metadata(job_id)
+    if metadata is None:
+        return jsonify({"job_id": job_id, "status": "expired"}), 410
+
+    payload = _job_service().job_payload(metadata, route_base=API_SYNTHESIS_JOBS_ROUTE)
+    if payload["status"] == "expired":
+        return jsonify(payload), 410
+
+    return jsonify(payload)
+
+
+@app.route("/api/synthesis-jobs/<job_id>", methods=["DELETE"])
+def api_delete_synthesis_job(job_id):
+    if not _is_valid_job_id(job_id):
+        return _api_error_response("invalid_job_id", "Invalid job id.", 400)
+
+    _delete_job(job_id)
+    return "", 204
+
+
+@app.route("/api/synthesis-jobs/<job_id>/download", methods=["GET"])
+def api_download_synthesis_job(job_id):
+    if not _is_valid_job_id(job_id):
+        return _api_error_response("invalid_job_id", "Invalid job id.", 400)
+
+    metadata = _read_job_metadata(job_id)
+    if metadata is None or metadata.get("status") == "expired":
+        return jsonify({"job_id": job_id, "status": "expired"}), 410
+
+    payload = _job_service().job_payload(metadata, route_base=API_SYNTHESIS_JOBS_ROUTE)
+    if metadata.get("status") == "failed":
+        return jsonify(payload), 400
+    if metadata.get("status") != "ready":
+        return jsonify(payload), 409
+
+    output_path = os.path.join(_job_dir(job_id), "output.wav")
+    if not os.path.exists(output_path):
+        _delete_job(job_id)
+        return jsonify({"job_id": job_id, "status": "expired"}), 410
+
+    return send_file(
+        output_path,
+        as_attachment=True,
+        download_name=metadata.get("download_name", "output.wav"),
+    )
 
 
 @app.route("/")

@@ -11,6 +11,7 @@
     const themeController = window.octabitTheme || {};
     const THEME_STORAGE_KEY = themeController.storageKey || 'octabitTheme';
     const THEME_VALUES = ['light', 'dark'];
+    const SYNTHESIS_JOBS_API_URL = '/api/synthesis-jobs';
     const CONTROL_SWITCH_TRANSITION_MS = 200;
     const PREVIEW_VOLUME = 0.5;
     const MIN_CURVE_FREQUENCY_HZ = 8.175798915643707;
@@ -1154,12 +1155,28 @@
         }
     }
 
+    function responseErrorMessage(payload, fallbackMessage) {
+        if (!payload || typeof payload !== 'object') {
+            return fallbackMessage;
+        }
+
+        if (payload.error && typeof payload.error === 'object') {
+            return payload.error.message || payload.error.code || fallbackMessage;
+        }
+
+        if (typeof payload.error === 'string') {
+            return payload.error;
+        }
+
+        return fallbackMessage;
+    }
+
     async function waitForSynthesiseJob(jobId, file, index, total) {
         while (true) {
-            const response = await fetch(`/synthesise/jobs/${jobId}`);
+            const response = await fetch(`${SYNTHESIS_JOBS_API_URL}/${jobId}`);
             const payload = await readJsonResponse(response);
             if (!response.ok && !['ready', 'failed', 'expired'].includes(payload.status)) {
-                throw new Error(payload.error || response.statusText);
+                throw new Error(responseErrorMessage(payload, response.statusText));
             }
 
             if (payload.status === 'ready') {
@@ -1172,7 +1189,7 @@
             }
 
             if (payload.status === 'failed' || payload.status === 'expired') {
-                throw new Error(payload.error || payload.status);
+                throw new Error(responseErrorMessage(payload, payload.status));
             }
 
             processingStatus.textContent = t('status.rendering_file', {
@@ -1206,7 +1223,7 @@
             formData.append('midi_file', file);
 
             try {
-                const response = await fetch('/synthesise/jobs', {
+                const response = await fetch(SYNTHESIS_JOBS_API_URL, {
                     method: 'POST',
                     body: formData,
                 });
@@ -1215,14 +1232,14 @@
                     failedFiles.push(file);
                     alert(t('alerts.processing_error', {
                         filename: file.name,
-                        error: errorPayload.error || response.statusText,
+                        error: responseErrorMessage(errorPayload, response.statusText),
                     }));
                     continue;
                 }
 
                 const job = await readJsonResponse(response);
                 if (!job.job_id) {
-                    throw new Error(job.error || response.statusText);
+                    throw new Error(responseErrorMessage(job, response.statusText));
                 }
                 const readyJob = job.status === 'ready'
                     ? job
