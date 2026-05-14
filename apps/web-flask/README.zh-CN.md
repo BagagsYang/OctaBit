@@ -41,12 +41,16 @@ apps\web-flask\Launch_Synthesiser.bat
 
 此应用从共享资源目录提供预览 WAV 文件，不应复制渲染器逻辑。
 
-## 当前上传约定
+## 当前 API 契约
 
-`POST /synthesise` 使用 `multipart/form-data`，包含：
+浏览器 UI 现在使用 `/api/synthesis-jobs` 路由完成上传、状态轮询、WAV 下载和手动清理。较早的
+`/synthesise` 与 `/synthesise/jobs*` 路由仍保留用于兼容。完整契约位于
+`../../docs/api-contract.zh-CN.md`。
+
+`POST /api/synthesis-jobs` 使用 `multipart/form-data`，包含：
 
 - `midi_file`：上传的 `.mid` 或 `.midi`
-- `rate`：整数采样率
+- `rate`：`44100`、`48000` 或 `96000`
 - `layers_json`：层对象的 JSON 数组
 
 每个层对象包含：
@@ -58,14 +62,47 @@ apps\web-flask\Launch_Synthesiser.bat
 
 浏览器 UI 在 JavaScript 中保存层状态，并将其序列化到 `layers_json` 中。
 
-在服务器部署中，浏览器 UI 使用渲染任务接口，而不是等待单个请求同时完成上传、渲染和下载：
+当前 API 路由：
 
+- `GET /api/health`：轻量 JSON 健康检查。
+- `POST /api/synthesis-jobs`：接受上述表单字段并返回任务 id。
+- `GET /api/synthesis-jobs/<job_id>`：报告 queued、rendering、ready、failed 或 expired 状态。
+- `GET /api/synthesis-jobs/<job_id>/download`：下载已准备好的 WAV 文件。
+- `DELETE /api/synthesis-jobs/<job_id>`：当用户清空已转换文件列表时删除服务器上的临时文件。
+
+兼容路由：
+
+- `POST /synthesise`：单请求上传、渲染和下载路径。
 - `POST /synthesise/jobs`：接受相同表单字段并返回任务 id。
 - `GET /synthesise/jobs/<job_id>`：报告 queued、rendering、ready、failed 或 expired 状态。
 - `GET /synthesise/jobs/<job_id>/download`：下载已准备好的 WAV 文件。
 - `DELETE /synthesise/jobs/<job_id>`：当用户清空已转换文件列表时删除服务器上的临时文件。
 
 已准备好的任务文件是临时文件，会在 `WEB_DOWNLOAD_TTL_SECONDS` 后过期；默认值为 1800 秒。浏览器也会在用户清空已转换文件列表时立即删除服务器上已准备好的文件。
+
+API 错误使用 `{"error":{"code":"...","message":"..."}}`。兼容路由继续保留现有
+`{"error":"..."}` 响应形状，除非后续明确迁移。
+
+## 生产部署说明
+
+当前生产模型可以不使用 Docker：
+
+- 将 `apps/web-flask/requirements.txt` 安装到仓库本地虚拟环境。
+- 从 `apps/web-flask/` 运行指向 `app:app` 的 Gunicorn。
+- 将 Gunicorn 私有绑定到 `127.0.0.1:8000`。
+- 使用 systemd 管理 Gunicorn，例如通过 `octabit-web` 服务。
+- 使用 Caddy 作为公开反向代理，转发到 `127.0.0.1:8000`。
+- 让 `WEB_SYNTHESISE_JOB_ROOT`、`WEB_DOWNLOAD_TTL_SECONDS`、
+  `WEB_MAX_UPLOAD_BYTES` 和 Gunicorn timeout 与预期的上传、渲染、下载行为保持一致。
+
+Gunicorn 命令形态示例：
+
+```bash
+./.venv/bin/python3 -m gunicorn --chdir apps/web-flask --bind 127.0.0.1:8000 --workers 2 --timeout 600 app:app
+```
+
+`../../deploy/web-flask/` 下的 Docker 文件和 `../../compose.web.yml`
+仍保留为另一种部署路径。
 
 ## 输出命名
 

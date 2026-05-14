@@ -4,7 +4,7 @@ Language/语言: [English](./README.md) | 简体中文
 
 OctaBit 是一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 工具。官方网站是 <https://octabit.cc>。
 
-该仓库是为 OctaBit 重新整理后的单体仓库。当前活跃目标是 `apps/web-flask/` 中的 Flask/Gunicorn Web 服务，并通过 Docker 面向服务器部署。原生 macOS 和 Windows 应用已 deprecated/paused，不再作为活跃开发目标；代码保留在仓库中，用于参考或未来可能的恢复。Python 参考渲染器位于 `core/` 下，共享预览资源位于 `assets/` 下。
+该仓库是为 OctaBit 重新整理后的单体仓库。当前活跃目标是 `apps/web-flask/` 中的 Flask/Gunicorn Web 服务，可通过 Python 虚拟环境、Gunicorn、systemd 和 Caddy 部署；Docker 打包保留为另一种部署路径。原生 macOS 和 Windows 应用已 deprecated/paused，不再作为活跃开发目标；代码保留在仓库中，用于参考或未来可能的恢复。Python 参考渲染器位于 `core/` 下，共享预览资源位于 `assets/` 下。
 
 ## 目录结构
 
@@ -16,7 +16,7 @@ OctaBit 是一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 
 | `apps/desktop/` | 为未来桌面打包工作保留的占位目录 |
 | `core/python-renderer/` | 规范 Python MIDI 转 WAV 渲染器与对齐参考实现 |
 | `assets/previews/` | Web 应用和保留的原生应用代码使用的规范波形预览 WAV 资源 |
-| `docs/` | 评审记录与仓库结构说明 |
+| `docs/` | API 契约、评审记录与仓库结构说明 |
 
 ## 共享渲染器
 
@@ -39,11 +39,12 @@ python3 -m venv .venv
 - macOS 辅助构建（仅在检查已暂停的原生应用时需要）：`./.venv/bin/python3 -m pip install -r apps/macos/requirements-build.txt`
 - Windows 对齐测试（仅在检查已暂停的原生应用时需要）：`./.venv/bin/python3 -m pip install -r core/python-renderer/requirements.txt`
 
-各应用的专用说明位于：
+各应用的专用说明和 API 说明位于：
 
 - `apps/web-flask/README.md`
 - `apps/macos/macos/README.md`
 - `apps/windows/README.md`
+- `docs/api-contract.zh-CN.md`
 
 仓库结构说明位于 `docs/repository-layout.md`。
 

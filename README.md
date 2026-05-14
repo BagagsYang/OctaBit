@@ -4,7 +4,7 @@ Language/语言: English | [简体中文](./README.zh-CN.md)
 
 OctaBit is a simple web tool for converting MIDI files into 8-bit style music. The official site is <https://octabit.cc>.
 
-This repository is a reorganised monorepo for OctaBit. The current active target is the Flask/Gunicorn web service in `apps/web-flask/`, packaged for server deployment with Docker. The native macOS and Windows apps are deprecated/paused, not actively developed, and kept in the repository for reference or possible future revival. The Python reference renderer lives under `core/`, and shared preview assets live under `assets/`.
+This repository is a reorganised monorepo for OctaBit. The current active target is the Flask/Gunicorn web service in `apps/web-flask/`, deployable with a Python virtual environment, Gunicorn, systemd, and Caddy; Docker packaging is retained as an alternate deployment path. The native macOS and Windows apps are deprecated/paused, not actively developed, and kept in the repository for reference or possible future revival. The Python reference renderer lives under `core/`, and shared preview assets live under `assets/`.
 
 ## Layout
 
@@ -16,7 +16,7 @@ This repository is a reorganised monorepo for OctaBit. The current active target
 | `apps/desktop/` | Reserved placeholder for future desktop packaging work |
 | `core/python-renderer/` | Canonical Python MIDI-to-WAV renderer and parity reference |
 | `assets/previews/` | Canonical waveform preview WAV files used by the web app and retained native app code |
-| `docs/` | Reviews and repository structure notes |
+| `docs/` | API contract, reviews, and repository structure notes |
 
 ## Shared renderer
 
@@ -39,11 +39,12 @@ Install only the dependencies needed for the area you are working on:
 - macOS helper build, if inspecting the paused native app: `./.venv/bin/python3 -m pip install -r apps/macos/requirements-build.txt`
 - Windows parity tests, if inspecting the paused native app: `./.venv/bin/python3 -m pip install -r core/python-renderer/requirements.txt`
 
-App-specific instructions live in:
+App-specific instructions and API notes live in:
 
 - `apps/web-flask/README.md`
 - `apps/macos/macos/README.md`
 - `apps/windows/README.md`
+- `docs/api-contract.md`
 
 Repository layout notes live in `docs/repository-layout.md`.
 

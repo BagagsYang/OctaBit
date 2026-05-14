@@ -7,8 +7,8 @@ MIDI files into 8-bit style music. The current active target is the public
 Flask/Gunicorn web service in `apps/web-flask/`, published for `octabit.cc`.
 The native macOS and Windows apps are deprecated/paused, not actively developed,
 and retained for reference or possible future revival. The repository also
-contains the canonical Python renderer, shared preview assets, deployment files,
-and release documentation.
+contains the canonical Python renderer, shared preview assets, API contract
+documentation, deployment files, and release documentation.
 
 ## Top-level map
 
@@ -20,7 +20,7 @@ and release documentation.
 | `apps/` | Current web app target, retained native app code, and the reserved desktop placeholder. |
 | `core/python-renderer/` | Canonical Python MIDI-to-WAV renderer and parity reference. |
 | `assets/previews/` | Canonical waveform preview WAV files shared by the apps. |
-| `docs/` | Repository layout notes, licensing audit, and review reports. |
+| `docs/` | API contract, repository layout notes, licensing audit, and review reports. |
 | `deploy/web-flask/` | Docker deployment documentation and Dockerfile for the Flask web app. |
 | `.github/workflows/` | Retained GitHub Actions workflow for Windows release builds. |
 | `compose.web.yml` | Docker Compose entry point for the Flask web deployment. |
@@ -38,8 +38,10 @@ part of the maintained source layout.
 
 Current active Flask/browser UI and deployable web service for the project.
 
-- `app.py`: Flask entry point, upload handling, synthesis endpoints, preview
-  routes, and server-side render job endpoints.
+- `app.py`: Flask entry point, upload handling, synthesis/API endpoints,
+  preview routes, and server-side render job endpoints.
+- `synthesis_jobs.py`: filesystem-backed synthesis job lifecycle, cleanup, and
+  render-thread orchestration.
 - `templates/index.html`: browser UI shell.
 - `static/css/` and `static/js/`: web-specific styling and browser behaviour.
 - `i18n/`: JSON catalogues for English, French, and Simplified Chinese UI text.
@@ -127,6 +129,8 @@ Canonical preview WAV assets used by the web app and retained native app paths.
 
 ## Documentation and generated artefacts
 
+- `docs/api-contract.md` and `docs/api-contract.zh-CN.md`: current web API
+  contract, compatibility route notes, job payloads, and public-demo safeguards.
 - `docs/repository-layout.md` and `docs/repository-layout.zh-CN.md`: current
   repository layout in English and Simplified Chinese.
 - `docs/licensing-audit.md`: licensing and attribution audit for repository and
@@ -182,7 +186,13 @@ The paused macOS app builds through Xcode with the `MIDI8BitSynthesiser`
 scheme. The Xcode build phase runs
 `apps/macos/macos/build_desktop_resources.sh`.
 
-The Flask Docker deployment uses:
+The current non-Docker production path can run the Flask web app from a Python
+virtual environment, with Gunicorn bound privately to `127.0.0.1:8000`, systemd
+managing the service, and Caddy reverse proxying public traffic to that private
+Gunicorn listener. Keep the upload directory, job TTL, maximum upload size, and
+Gunicorn timeout aligned with the current synthesis job behaviour.
+
+The Docker deployment remains available as an alternate path:
 
 ```bash
 docker compose -f compose.web.yml up -d --build
