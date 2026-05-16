@@ -3,7 +3,79 @@ import os
 import shutil
 import time
 import uuid
-from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock, Semaphore
+
+
+DEFAULT_RENDER_WORKERS = 2
+DEFAULT_RENDER_QUEUE_SIZE = 8
+
+
+class RenderQueueFull(RuntimeError):
+    pass
+
+
+class BoundedRenderExecutor:
+    def __init__(self, max_workers=DEFAULT_RENDER_WORKERS, max_queue_size=DEFAULT_RENDER_QUEUE_SIZE):
+        self.max_workers = _positive_int(max_workers, DEFAULT_RENDER_WORKERS)
+        self.max_queue_size = _non_negative_int(max_queue_size, DEFAULT_RENDER_QUEUE_SIZE)
+        self._semaphore = Semaphore(self.max_workers + self.max_queue_size)
+        self._executor = ThreadPoolExecutor(
+            max_workers=self.max_workers,
+            thread_name_prefix="octabit-render",
+        )
+
+    def submit(self, callback, *args):
+        if not self._semaphore.acquire(blocking=False):
+            raise RenderQueueFull("The render queue is full. Try again after current jobs finish.")
+
+        def run_and_release():
+            try:
+                callback(*args)
+            finally:
+                self._semaphore.release()
+
+        try:
+            return self._executor.submit(run_and_release)
+        except Exception:
+            self._semaphore.release()
+            raise
+
+
+_executor_lock = Lock()
+_shared_executor = None
+_shared_executor_config = None
+
+
+def _positive_int(value, default):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(1, parsed)
+
+
+def _non_negative_int(value, default):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(0, parsed)
+
+
+def get_render_executor(max_workers=DEFAULT_RENDER_WORKERS, max_queue_size=DEFAULT_RENDER_QUEUE_SIZE):
+    global _shared_executor
+    global _shared_executor_config
+
+    config = (
+        _positive_int(max_workers, DEFAULT_RENDER_WORKERS),
+        _non_negative_int(max_queue_size, DEFAULT_RENDER_QUEUE_SIZE),
+    )
+    with _executor_lock:
+        if _shared_executor is None or _shared_executor_config != config:
+            _shared_executor = BoundedRenderExecutor(*config)
+            _shared_executor_config = config
+        return _shared_executor
 
 
 def is_valid_job_id(job_id):
@@ -29,11 +101,21 @@ def job_error_message(exc):
 
 
 class SynthesisJobService:
-    def __init__(self, job_root, download_ttl_seconds, run_inline=False, logger=None):
+    def __init__(
+        self,
+        job_root,
+        download_ttl_seconds,
+        run_inline=False,
+        logger=None,
+        max_workers=DEFAULT_RENDER_WORKERS,
+        max_queue_size=DEFAULT_RENDER_QUEUE_SIZE,
+    ):
         self.job_root = job_root
         self.download_ttl_seconds = download_ttl_seconds
         self.run_inline = run_inline
         self.logger = logger
+        self.max_workers = max_workers
+        self.max_queue_size = max_queue_size
 
     def job_dir(self, job_id):
         if not is_valid_job_id(job_id):
@@ -149,12 +231,15 @@ class SynthesisJobService:
             self.run_job(job_id, input_path, form_payload, uploaded_filename, render_uploaded_wav)
             return
 
-        thread = Thread(
-            target=self.run_job,
-            args=(job_id, input_path, form_payload, uploaded_filename, render_uploaded_wav),
-            daemon=True,
+        executor = get_render_executor(self.max_workers, self.max_queue_size)
+        executor.submit(
+            self.run_job,
+            job_id,
+            input_path,
+            form_payload,
+            uploaded_filename,
+            render_uploaded_wav,
         )
-        thread.start()
 
     def run_job(self, job_id, input_path, form_payload, uploaded_filename, render_uploaded_wav):
         output_path = self.output_path(job_id)

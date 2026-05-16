@@ -59,6 +59,8 @@ docker compose -f compose.web.yml down
 ## Production Notes
 
 - The container runs Gunicorn on `0.0.0.0:${PORT:-8000}` as a non-root user.
+- The Dockerfile pins the Python base image by digest and installs from `deploy/web-flask/build-requirements.lock` plus `deploy/web-flask/requirements.lock` with pip hash verification. Regenerate the lock files intentionally when Python dependencies change.
+- Background synthesis uses a bounded render pool. `WEB_RENDER_WORKERS` defaults to 2 active renders and `WEB_RENDER_QUEUE_SIZE` defaults to 8 waiting renders per container.
 - The image default and `compose.web.yml` both set `GUNICORN_TIMEOUT=600`. This gives slow SSH tunnel downloads more time, while the browser still downloads the generated WAV only after the server has finished rendering it.
 - The container includes a lightweight health check against `/` using Python's standard library, so no extra curl package is needed in the image.
 - Anonymous workspace metadata, uploaded MIDI files, and generated WAV files live under `WEB_SYNTHESISE_JOB_ROOT`, defaulting to `/tmp/octabit-jobs`; the compose file mounts `/tmp` as a 1 GB in-memory tmpfs and no upload data is persisted.

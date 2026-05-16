@@ -8,7 +8,6 @@ import time
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
-from threading import Thread
 
 import synthesis_jobs
 
@@ -42,6 +41,8 @@ class WorkspaceService:
         default_config,
         run_inline=False,
         logger=None,
+        max_workers=synthesis_jobs.DEFAULT_RENDER_WORKERS,
+        max_queue_size=synthesis_jobs.DEFAULT_RENDER_QUEUE_SIZE,
     ):
         self.job_root = job_root
         self.workspace_ttl_seconds = workspace_ttl_seconds
@@ -51,6 +52,8 @@ class WorkspaceService:
         self.default_config = default_config
         self.run_inline = run_inline
         self.logger = logger
+        self.max_workers = max_workers
+        self.max_queue_size = max_queue_size
         self.db_path = os.path.join(self.job_root, "workspaces.sqlite3")
         self.workspace_root = os.path.join(self.job_root, "workspaces")
         self._ensure_schema()
@@ -508,12 +511,16 @@ class WorkspaceService:
             self.run_job(workspace.id, job_id, input_path, form_payload, source_name, render_uploaded_wav)
             return
 
-        thread = Thread(
-            target=self.run_job,
-            args=(workspace.id, job_id, input_path, form_payload, source_name, render_uploaded_wav),
-            daemon=True,
+        executor = synthesis_jobs.get_render_executor(self.max_workers, self.max_queue_size)
+        executor.submit(
+            self.run_job,
+            workspace.id,
+            job_id,
+            input_path,
+            form_payload,
+            source_name,
+            render_uploaded_wav,
         )
-        thread.start()
 
     def run_job(self, workspace_id, job_id, input_path, form_payload, source_name, render_uploaded_wav):
         output_path = self.job_output_path(workspace_id, job_id)

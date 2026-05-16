@@ -1,57 +1,142 @@
 <p align="center">
-    <img src="https://github.com/user-attachments/files/27846479/octabit_icon.tiff">
-<p>
+    <img src="https://github.com/user-attachments/files/27846479/octabit_icon.tiff" alt="OctaBit icon">
+</p>
 
 # OctaBit
 
 Language/语言: English | [简体中文](./README.zh-CN.md)
 
-OctaBit is a simple web tool for converting MIDI files into 8-bit style music. The official site is <https://octabit.cc>.
+OctaBit is a browser-based tool for converting MIDI files into 8-bit style WAV audio. The public service is <https://octabit.cc>.
 
-This repository is a reorganised monorepo for OctaBit. The current active target is the Flask/Gunicorn web service in `apps/web-flask/`, deployable with a Python virtual environment, Gunicorn, systemd, and Caddy; Docker packaging is retained as an alternate deployment path. The native macOS and Windows apps are deprecated/paused, not actively developed, and kept in the repository for reference or possible future revival. The Python reference renderer lives under `core/`, and shared preview assets live under `assets/`.
+This repository now focuses on the Flask web app. The active application lives in `apps/web-flask/`, and synthesis is delegated to the canonical Python renderer in `core/python-renderer/`. The native macOS and Windows apps are deprecated/paused and retained only for reference or possible future revival.
 
-## Layout
+## What Is Active
 
-| Folder | Responsibility |
+| Path | Role |
 | --- | --- |
-| `apps/web-flask/` | Current active Flask/browser UI and deployable web service |
-| `apps/macos/` | Deprecated/paused native macOS SwiftUI app and Xcode project, retained for reference |
-| `apps/windows/` | Deprecated/paused native Windows WinUI 3 solution, C# renderer, installer, retained for reference |
-| `apps/desktop/` | Reserved placeholder for future desktop packaging work |
-| `core/python-renderer/` | Canonical Python MIDI-to-WAV renderer and parity reference |
-| `assets/previews/` | Canonical waveform preview WAV files used by the web app and retained native app code |
-| `docs/` | API contract, reviews, and repository structure notes |
+| `apps/web-flask/` | Current Flask browser UI, API routes, static assets, launchers, and web tests |
+| `core/python-renderer/` | Canonical MIDI-to-WAV renderer used by the web app |
+| `assets/previews/` | Shared waveform preview WAV files served by the web app |
+| `deploy/web-flask/` | Docker image definition and deployment notes for the web app |
+| `compose.web.yml` | Minimal Docker Compose entrypoint for the web app |
+| `docs/api-contract.md` | Web API request and response contract |
 
-## Shared renderer
+Retained native app folders:
 
-- Canonical renderer entrypoint: `core/python-renderer/midi_to_wave.py`
-- Stable inputs: MIDI path, output WAV path, sample rate, waveform layers
-- Stable output: rendered WAV file or explicit error
-- The retained Windows code includes a native C# implementation that validates against the Python renderer in parity tests
+| Path | Status |
+| --- | --- |
+| `apps/macos/` | Deprecated/paused native SwiftUI macOS app |
+| `apps/windows/` | Deprecated/paused native WinUI 3 Windows app |
 
-## Build notes
+## Run The Web App
 
-Create the repo-local environment at the repository root:
+From the repository root:
 
 ```bash
 python3 -m venv .venv
+./.venv/bin/python3 -m pip install -r apps/web-flask/requirements.txt
+./.venv/bin/python3 apps/web-flask/app.py
 ```
 
-Install only the dependencies needed for the area you are working on:
+You can also use the launcher scripts:
 
-- Web UI: `./.venv/bin/python3 -m pip install -r apps/web-flask/requirements.txt`
-- macOS helper build, if inspecting the paused native app: `./.venv/bin/python3 -m pip install -r apps/macos/requirements-build.txt`
-- Windows parity tests, if inspecting the paused native app: `./.venv/bin/python3 -m pip install -r core/python-renderer/requirements.txt`
+```bash
+apps/web-flask/Launch_Synthesiser.command
+apps\web-flask\Launch_Synthesiser.bat
+```
 
-App-specific instructions and API notes live in:
+Run the active web tests:
 
-- `apps/web-flask/README.md`
-- `apps/macos/macos/README.md`
-- `apps/windows/README.md`
-- `docs/api-contract.md`
+```bash
+./.venv/bin/python3 -m unittest discover -s apps/web-flask/tests
+./.venv/bin/python3 -m unittest discover -s core/python-renderer/tests
+```
 
-Repository layout notes live in `docs/repository-layout.md`.
+## User Limits
+
+These are the current default limits for the web app and renderer. Deployment operators can change some web-service limits through environment variables, but the renderer safety limits are enforced in `core/python-renderer/midi_to_wave.py`.
+
+| Limit | Default | Source |
+| --- | ---: | --- |
+| Request upload size | 20 MiB | `WEB_MAX_UPLOAD_BYTES` |
+| Workspace lifetime after last activity | 86400 seconds | `WEB_WORKSPACE_TTL_SECONDS` |
+| Queued MIDI files per workspace | 20 files | `WEB_WORKSPACE_MAX_QUEUED_FILES` |
+| Total queued upload storage per workspace | 100 MiB | `WEB_WORKSPACE_MAX_UPLOAD_BYTES` |
+| Converted WAV files per workspace | 20 files | `WEB_WORKSPACE_MAX_CONVERTED_FILES` |
+| Compatibility job download lifetime | 1800 seconds | `WEB_DOWNLOAD_TTL_SECONDS` |
+| Active render workers per container | 2 workers | `WEB_RENDER_WORKERS` |
+| Waiting render queue per container | 8 jobs | `WEB_RENDER_QUEUE_SIZE` |
+| MIDI duration | 1800 seconds | renderer limit |
+| Rendered samples | 172800000 samples | renderer limit |
+| WAV sample data size | 345600000 bytes, about 329.6 MiB | renderer limit |
+| MIDI notes | 20000 notes | renderer limit |
+| Sound layers | 4 layers | renderer limit and web config |
+| Frequency curve points per layer | 8 points | renderer limit |
+| Sample rates | 44100, 48000, or 96000 Hz | web validation |
+| Pulse duty cycle | 0.01 to 0.99 | renderer validation |
+| Web layer volume | 0.0 to 2.0 | workspace config validation |
+| Frequency curve gain | -36 dB to 12 dB | renderer validation |
+| Frequency curve range | MIDI note 0 to 127 frequencies | renderer validation |
+
+Queued uploads and converted WAV files are temporary. When users clear queued or converted files in the browser, the web app asks the server to delete the corresponding temporary files immediately.
+
+## Web API
+
+The browser uses anonymous, cookie-backed temporary workspaces. `GET /api/workspace` creates or restores the workspace, and resource routes require the active workspace cookie. The full API contract is in `docs/api-contract.md`.
+
+Primary routes:
+
+- `GET /api/health`
+- `GET /api/workspace`
+- `POST /api/workspace/uploads`
+- `DELETE /api/workspace/uploads/<file_id>`
+- `PATCH /api/workspace/queue`
+- `PUT /api/workspace/config`
+- `POST /api/synthesis-jobs`
+- `GET /api/synthesis-jobs/<job_id>`
+- `GET /api/synthesis-jobs/<job_id>/download`
+- `DELETE /api/synthesis-jobs/<job_id>`
+
+Compatibility routes remain for older clients:
+
+- `POST /synthesise`
+- `POST /synthesise/jobs`
+- `GET /synthesise/jobs/<job_id>`
+- `GET /synthesise/jobs/<job_id>/download`
+- `DELETE /synthesise/jobs/<job_id>`
+
+API errors use `{"error":{"code":"...","message":"..."}}`. Compatibility routes keep the older `{"error":"..."}` shape.
+
+## Sound Configuration
+
+The web app stores sample rate and layer settings in the temporary workspace. Synthesis supports pulse, sine, sawtooth, and triangle layers. Frequency-gain curves are validated by the shared renderer and are applied per layer during synthesis.
+
+Output naming:
+
+- Single audible layer without a curve: `<original>_<wave>.wav`
+- Multiple audible layers without a curve: `<original>_mix.wav`
+- Any audible layer with a non-empty frequency curve: `<original>_<base>_<hash>.wav`
+
+The hash is derived from the sanitised layer payload, so different curve settings do not reuse the same export name.
+
+## Localisation
+
+The web UI uses JSON catalog files in `apps/web-flask/i18n/`. Keep `en.json`, `fr.json`, and `zh-CN.json` key sets aligned. English is the fallback locale.
+
+User-facing web strings should go through the catalog rather than being hardcoded in templates or JavaScript. Native macOS and Windows localisation work is out of scope while those apps remain paused.
+
+## Deployment
+
+The current production model can run without Docker:
+
+```bash
+./.venv/bin/python3 -m gunicorn --chdir apps/web-flask --bind 127.0.0.1:8000 --workers 2 --timeout 600 app:app
+```
+
+For public deployment, keep Gunicorn private to the server or Docker network and put Caddy or Nginx in front of it. Docker deployment notes are in `deploy/web-flask/README.md`.
+
+The Docker image pins its Python base image by digest and installs from hash-locked requirement files in `deploy/web-flask/`.
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`). See the [LICENSE](LICENSE.md) file for full details.
+This project is licensed under the GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`). See [LICENSE.md](./LICENSE.md) for details.

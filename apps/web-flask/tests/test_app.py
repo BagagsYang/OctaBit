@@ -3,6 +3,7 @@ import json
 import sqlite3
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from contextlib import closing
@@ -28,6 +29,8 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
             "WEB_WORKSPACE_MAX_QUEUED_FILES": web_app.app.config.get("WEB_WORKSPACE_MAX_QUEUED_FILES"),
             "WEB_WORKSPACE_MAX_UPLOAD_BYTES": web_app.app.config.get("WEB_WORKSPACE_MAX_UPLOAD_BYTES"),
             "WEB_WORKSPACE_MAX_CONVERTED_FILES": web_app.app.config.get("WEB_WORKSPACE_MAX_CONVERTED_FILES"),
+            "WEB_RENDER_WORKERS": web_app.app.config.get("WEB_RENDER_WORKERS"),
+            "WEB_RENDER_QUEUE_SIZE": web_app.app.config.get("WEB_RENDER_QUEUE_SIZE"),
         }
         self.job_root = tempfile.TemporaryDirectory()
         self.addCleanup(self.job_root.cleanup)
@@ -39,6 +42,8 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         web_app.app.config["WEB_WORKSPACE_MAX_QUEUED_FILES"] = 20
         web_app.app.config["WEB_WORKSPACE_MAX_UPLOAD_BYTES"] = 100 * 1024 * 1024
         web_app.app.config["WEB_WORKSPACE_MAX_CONVERTED_FILES"] = 20
+        web_app.app.config["WEB_RENDER_WORKERS"] = 2
+        web_app.app.config["WEB_RENDER_QUEUE_SIZE"] = 8
         self.client = web_app.app.test_client()
 
     def _restore_job_config(self):
@@ -416,6 +421,56 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual("empty_midi_file", empty_response.get_json()["error"]["code"])
         self.assertEqual([], list(Path(self.job_root.name).iterdir()))
 
+    def test_api_synthesis_job_marks_oversized_render_as_failed(self):
+        response = self.client.post(
+            "/api/synthesis-jobs",
+            data={
+                "rate": "44100",
+                "midi_file": (
+                    io.BytesIO(self._build_midi_bytes([
+                        (
+                            69,
+                            web_app.midi_to_wave.MAX_RENDER_SECONDS,
+                            web_app.midi_to_wave.MAX_RENDER_SECONDS + 1,
+                        ),
+                    ])),
+                    "too-long.mid",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(202, response.status_code)
+        payload = response.get_json()
+        self.assertEqual("failed", payload["status"])
+        self.assertIn("duration", payload["error"])
+
+    def test_api_synthesis_job_rejects_more_than_four_layers(self):
+        layers = [
+            {
+                "type": "pulse",
+                "duty": 0.5,
+                "volume": 1.0,
+                "frequency_curve": [],
+            }
+            for _index in range(web_app.midi_to_wave.MAX_RENDER_LAYERS + 1)
+        ]
+
+        response = self.client.post(
+            "/api/synthesis-jobs",
+            data={
+                "rate": "44100",
+                "layers_json": json.dumps(layers),
+                "midi_file": (io.BytesIO(self._build_midi_bytes()), "lead.mid"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual("invalid_layers", response.get_json()["error"]["code"])
+
     def test_api_synthesis_job_rejects_invalid_job_ids(self):
         for method, path in (
             ("get", "/api/synthesis-jobs/not-a-job"),
@@ -741,6 +796,51 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertEqual("Uploaded MIDI file is empty.", response.get_json()["error"])
+
+    def test_synthesise_rejects_oversized_render_before_wav_response(self):
+        response = self.client.post(
+            "/synthesise",
+            data={
+                "rate": "44100",
+                "midi_file": (
+                    io.BytesIO(self._build_midi_bytes([
+                        (
+                            69,
+                            web_app.midi_to_wave.MAX_RENDER_SECONDS,
+                            web_app.midi_to_wave.MAX_RENDER_SECONDS + 1,
+                        ),
+                    ])),
+                    "too-long.mid",
+                ),
+            },
+            content_type="multipart/form-data",
+        )
+        self.addCleanup(response.close)
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("duration", response.get_json()["error"])
+
+    def test_render_executor_rejects_jobs_when_capacity_is_full(self):
+        started = threading.Event()
+        release = threading.Event()
+        executor = web_app.synthesis_jobs.BoundedRenderExecutor(
+            max_workers=1,
+            max_queue_size=0,
+        )
+
+        def blocking_job():
+            started.set()
+            release.wait(2)
+
+        future = executor.submit(blocking_job)
+        self.assertTrue(started.wait(1))
+
+        try:
+            with self.assertRaises(web_app.synthesis_jobs.RenderQueueFull):
+                executor.submit(lambda: None)
+        finally:
+            release.set()
+            future.result(timeout=2)
 
     def test_synthesise_accepts_layers_json_and_returns_wav(self):
         response = self.client.post(
@@ -1136,15 +1236,17 @@ class WebFlaskSynthesiseTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(b"RIFF", response.data[:4])
 
-    def _build_midi_bytes(self):
+    def _build_midi_bytes(self, note_specs=None):
+        note_specs = note_specs or [(69, 0.0, 0.5)]
         midi = pretty_midi.PrettyMIDI()
         instrument = pretty_midi.Instrument(program=0)
-        instrument.notes.append(pretty_midi.Note(
-            velocity=100,
-            pitch=69,
-            start=0.0,
-            end=0.5,
-        ))
+        for pitch, start, end in note_specs:
+            instrument.notes.append(pretty_midi.Note(
+                velocity=100,
+                pitch=pitch,
+                start=start,
+                end=end,
+            ))
         midi.instruments.append(instrument)
 
         with tempfile.TemporaryDirectory() as temp_dir:

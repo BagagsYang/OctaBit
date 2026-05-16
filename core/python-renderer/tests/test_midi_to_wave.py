@@ -144,6 +144,20 @@ class ParseLayersJsonTests(unittest.TestCase):
                 ],
             }]))
 
+    def test_rejects_more_than_maximum_render_layers(self):
+        layers = [
+            {
+                "type": "pulse",
+                "duty": 0.5,
+                "volume": 1.0,
+                "frequency_curve": [],
+            }
+            for _index in range(midi_to_wave.MAX_RENDER_LAYERS + 1)
+        ]
+
+        with self.assertRaisesRegex(midi_to_wave.RenderLimitError, "sound layers"):
+            midi_to_wave.parse_layers_json(json.dumps(layers))
+
 
 class FrequencyCurveEvaluationTests(unittest.TestCase):
     def test_returns_exact_gain_at_curve_point(self):
@@ -252,6 +266,62 @@ class OutputNamingTests(unittest.TestCase):
 
 
 class MidiToAudioTests(unittest.TestCase):
+    def test_rejects_long_midi_before_render_allocation(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            midi_path = Path(temp_dir) / "long.mid"
+            wav_path = Path(temp_dir) / "long.wav"
+            self._write_test_midi(
+                midi_path,
+                [
+                    (69, midi_to_wave.MAX_RENDER_SECONDS, midi_to_wave.MAX_RENDER_SECONDS + 1),
+                ],
+            )
+
+            with self.assertRaisesRegex(midi_to_wave.RenderLimitError, "duration"):
+                midi_to_wave.midi_to_audio(str(midi_path), str(wav_path), sample_rate=100)
+
+            self.assertFalse(wav_path.exists())
+
+    def test_rejects_excessive_rendered_sample_count(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            midi_path = Path(temp_dir) / "dense-rate.mid"
+            wav_path = Path(temp_dir) / "dense-rate.wav"
+            self._write_test_midi(midi_path, [(69, 0.0, 200.0)])
+
+            with self.assertRaisesRegex(midi_to_wave.RenderLimitError, "too large"):
+                midi_to_wave.midi_to_audio(
+                    str(midi_path),
+                    str(wav_path),
+                    sample_rate=1_000_000,
+                )
+
+            self.assertFalse(wav_path.exists())
+
+    def test_rejects_too_many_midi_notes(self):
+        midi = pretty_midi.PrettyMIDI()
+        instrument = pretty_midi.Instrument(program=0)
+        for index in range(midi_to_wave.MAX_MIDI_NOTES + 1):
+            start = index * 0.0001
+            instrument.notes.append(pretty_midi.Note(
+                velocity=100,
+                pitch=69,
+                start=start,
+                end=start + 0.00005,
+            ))
+        midi.instruments.append(instrument)
+
+        with self.assertRaisesRegex(midi_to_wave.RenderLimitError, "too many notes"):
+            midi_to_wave.validate_render_limits(
+                midi,
+                sample_rate=1000,
+                layers=[{
+                    "type": "pulse",
+                    "duty": 0.5,
+                    "volume": 1.0,
+                    "frequency_curve": [],
+                }],
+            )
+
     def test_very_short_note_still_renders_audio_sample(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             midi_path = Path(temp_dir) / "short.mid"

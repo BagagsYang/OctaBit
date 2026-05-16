@@ -59,6 +59,8 @@ docker compose -f compose.web.yml down
 ## 生产部署说明
 
 - 容器会以非 root 用户运行 Gunicorn，并监听 `0.0.0.0:${PORT:-8000}`。
+- Dockerfile 通过摘要固定 Python 基础镜像，并使用 `deploy/web-flask/build-requirements.lock` 和 `deploy/web-flask/requirements.lock` 通过 pip 哈希校验安装依赖。Python 依赖变化时，应有意重新生成这些 lock 文件。
+- 后台合成使用有界渲染池。`WEB_RENDER_WORKERS` 默认每个容器最多 2 个活跃渲染，`WEB_RENDER_QUEUE_SIZE` 默认最多 8 个等待渲染。
 - 镜像默认值和 `compose.web.yml` 都将 `GUNICORN_TIMEOUT` 设置为 600 秒。这样慢速 SSH 隧道下载有更长时间完成，但浏览器仍会在服务器完成渲染后再下载生成的 WAV。
 - 容器包含一个使用 Python 标准库访问 `/` 的轻量健康检查，因此镜像里不需要额外安装 curl。
 - 匿名工作区元数据、上传的 MIDI 文件和生成的 WAV 文件都位于 `WEB_SYNTHESISE_JOB_ROOT` 下，默认是 `/tmp/octabit-jobs`；Compose 文件把 `/tmp` 挂载为 1 GB 的内存 tmpfs，不会持久化上传数据。

@@ -40,6 +40,8 @@ DEFAULT_WORKSPACE_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 DEFAULT_WORKSPACE_MAX_CONVERTED_FILES = 20
 DEFAULT_JOB_ROOT = os.path.join(tempfile.gettempdir(), "octabit-jobs")
 DEFAULT_MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+DEFAULT_RENDER_WORKERS = 2
+DEFAULT_RENDER_QUEUE_SIZE = 8
 ALLOWED_MIDI_EXTENSIONS = {".mid", ".midi"}
 ALLOWED_SAMPLE_RATES = {44100, 48000, 96000}
 WORKSPACE_CONFIG_SCHEMA = "octabit.workspace_config.v1"
@@ -152,12 +154,33 @@ def _get_job_root():
     )
 
 
+def _get_render_workers():
+    return _get_positive_int_config(
+        "WEB_RENDER_WORKERS",
+        "WEB_RENDER_WORKERS",
+        DEFAULT_RENDER_WORKERS,
+    )
+
+
+def _get_render_queue_size():
+    raw_value = app.config.get(
+        "WEB_RENDER_QUEUE_SIZE",
+        os.environ.get("WEB_RENDER_QUEUE_SIZE", DEFAULT_RENDER_QUEUE_SIZE),
+    )
+    try:
+        return max(0, int(raw_value))
+    except (TypeError, ValueError):
+        return DEFAULT_RENDER_QUEUE_SIZE
+
+
 def _job_service():
     return synthesis_jobs.SynthesisJobService(
         job_root=_get_job_root(),
         download_ttl_seconds=_get_download_ttl_seconds(),
         run_inline=bool(app.config.get("SYNTHESISE_JOBS_INLINE")),
         logger=app.logger,
+        max_workers=_get_render_workers(),
+        max_queue_size=_get_render_queue_size(),
     )
 
 
@@ -171,6 +194,8 @@ def _workspace_service():
         default_config=_default_workspace_config(),
         run_inline=bool(app.config.get("SYNTHESISE_JOBS_INLINE")),
         logger=app.logger,
+        max_workers=_get_render_workers(),
+        max_queue_size=_get_render_queue_size(),
     )
 
 
@@ -802,6 +827,7 @@ def api_create_synthesis_job():
             _cleanup_temp_path(temp_path)
             return _api_error("invalid_request", str(exc), 400)
 
+    job_id = None
     try:
         job_id, input_path = service.prepare_job(
             workspace,
@@ -820,6 +846,12 @@ def api_create_synthesis_job():
             source_name,
             _render_uploaded_wav,
         )
+    except synthesis_jobs.RenderQueueFull as exc:
+        if job_id is not None:
+            service.delete_job(workspace, job_id)
+        if not request.is_json:
+            _cleanup_temp_path(source_path)
+        return _api_error("render_queue_full", str(exc), 429)
     except workspaces.WorkspaceError as exc:
         if not request.is_json:
             _cleanup_temp_path(source_path)
@@ -1001,6 +1033,9 @@ def create_synthesise_job():
             return _json_legacy_error(translations["errors.empty_midi_file"]), 400
         _write_job_metadata(job_id, _initial_job_metadata(job_id, file.filename))
         _start_synthesise_job(job_id, input_path, request.form.to_dict(flat=True), file.filename)
+    except synthesis_jobs.RenderQueueFull as exc:
+        _delete_job(job_id)
+        return _json_legacy_error(str(exc)), 429
     except ValueError as exc:
         _delete_job(job_id)
         return _json_legacy_error(str(exc)), 400

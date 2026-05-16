@@ -1,10 +1,12 @@
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:401f6e1a67dad31a1bd78e9ad22d0ee0a3b52154e6bd30e90be696bb6a3d7461
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8000 \
     WEB_CONCURRENCY=2 \
     GUNICORN_TIMEOUT=600 \
+    WEB_RENDER_WORKERS=2 \
+    WEB_RENDER_QUEUE_SIZE=8 \
     WEB_DOWNLOAD_TTL_SECONDS=1800 \
     WEB_WORKSPACE_TTL_SECONDS=86400 \
     WEB_WORKSPACE_MAX_QUEUED_FILES=20 \
@@ -17,11 +19,11 @@ WORKDIR /app
 RUN groupadd --system app \
     && useradd --system --gid app --home-dir /app --shell /usr/sbin/nologin app
 
-COPY core/python-renderer/requirements.txt ./core/python-renderer/requirements.txt
-COPY apps/web-flask/requirements.txt ./apps/web-flask/requirements.txt
+COPY deploy/web-flask/build-requirements.lock ./deploy/web-flask/build-requirements.lock
+COPY deploy/web-flask/requirements.lock ./deploy/web-flask/requirements.lock
 
-RUN python -m pip install --upgrade pip \
-    && python -m pip install --no-cache-dir -r apps/web-flask/requirements.txt
+RUN python -m pip install --no-cache-dir --require-hashes -r deploy/web-flask/build-requirements.lock \
+    && python -m pip install --no-cache-dir --no-build-isolation --require-hashes -r deploy/web-flask/requirements.lock
 
 COPY apps/web-flask ./apps/web-flask
 COPY core/python-renderer ./core/python-renderer

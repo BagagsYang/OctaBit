@@ -32,6 +32,15 @@ MAX_CURVE_POINTS = 8
 CURVE_FREQUENCY_TOLERANCE_HZ = 1e-6
 AUDIO_WORKING_DTYPE = np.float32
 NORMALISED_PEAK = 0.89
+MAX_RENDER_SECONDS = 30 * 60
+MAX_RENDERED_SAMPLES = MAX_RENDER_SECONDS * 96_000
+MAX_OUTPUT_BYTES = MAX_RENDERED_SAMPLES * np.dtype(np.int16).itemsize
+MAX_MIDI_NOTES = 20_000
+MAX_RENDER_LAYERS = 4
+
+
+class RenderLimitError(ValueError):
+    """Raised before synthesis when untrusted MIDI would exceed safe render bounds."""
 
 
 def _parse_finite_number(raw_value, field_label):
@@ -178,6 +187,59 @@ def sanitise_layer(layer, layer_index):
     }
 
 
+def _validate_layer_count(layers):
+    if layers and len(layers) > MAX_RENDER_LAYERS:
+        raise RenderLimitError(
+            f"Synthesis supports at most {MAX_RENDER_LAYERS} sound layers."
+        )
+
+
+def _renderable_notes(midi_data):
+    notes = []
+    for instrument in midi_data.instruments:
+        if instrument.is_drum:
+            continue
+        notes.extend(instrument.notes)
+    return notes
+
+
+def validate_render_limits(midi_data, sample_rate, layers):
+    _validate_layer_count(layers)
+
+    total_time = midi_data.get_end_time()
+    if total_time > MAX_RENDER_SECONDS:
+        raise RenderLimitError(
+            f"MIDI duration must be {MAX_RENDER_SECONDS} seconds or less."
+        )
+
+    total_samples = int(np.ceil(total_time * sample_rate))
+    if total_samples > MAX_RENDERED_SAMPLES:
+        raise RenderLimitError(
+            f"Rendered audio is too large; use a shorter MIDI file or lower sample rate."
+        )
+
+    output_bytes = total_samples * np.dtype(np.int16).itemsize
+    if output_bytes > MAX_OUTPUT_BYTES:
+        raise RenderLimitError(
+            f"Rendered WAV output is too large; use a shorter MIDI file or lower sample rate."
+        )
+
+    notes = _renderable_notes(midi_data)
+    if len(notes) > MAX_MIDI_NOTES:
+        raise RenderLimitError(
+            f"MIDI contains too many notes; the limit is {MAX_MIDI_NOTES} notes."
+        )
+
+    for note in notes:
+        note_samples = int(math.ceil(note.end * sample_rate)) - int(note.start * sample_rate)
+        if note_samples > MAX_RENDERED_SAMPLES:
+            raise RenderLimitError(
+                "A MIDI note is too long to render safely."
+            )
+
+    return total_samples
+
+
 def db_to_linear_gain(gain_db):
     return 10.0 ** (gain_db / 20.0)
 
@@ -288,8 +350,7 @@ def midi_to_audio(midi_path, output_path, sample_rate=48000, layers=None):
     layers = normalise_runtime_layers(layers)
 
     midi_data = pretty_midi.PrettyMIDI(midi_path)
-    total_time = midi_data.get_end_time()
-    total_samples = int(np.ceil(total_time * sample_rate))
+    total_samples = validate_render_limits(midi_data, sample_rate, layers)
     audio_buffer = np.zeros(total_samples, dtype=AUDIO_WORKING_DTYPE)
 
     if total_samples == 0:
@@ -353,6 +414,7 @@ def normalise_runtime_layers(layers):
     if not layers:
         return [_default_layer()]
 
+    _validate_layer_count(layers)
     audible_layers = []
     for layer_index, layer in enumerate(layers, start=1):
         sanitised_layer = sanitise_layer(layer, layer_index)
@@ -372,6 +434,7 @@ def parse_layers_json(layers_json):
     if not isinstance(parsed, list):
         raise ValueError("Layer JSON must be an array of layer objects.")
 
+    _validate_layer_count(parsed)
     return [
         sanitise_layer(layer, index)
         for index, layer in enumerate(parsed, start=1)
