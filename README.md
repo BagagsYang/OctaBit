@@ -1,3 +1,7 @@
+<p align="center">
+    <img src="https://github.com/user-attachments/files/27846479/octabit_icon.tiff">
+<p>
+
 # OctaBit
 
 Language/语言: English | [简体中文](./README.zh-CN.md)
