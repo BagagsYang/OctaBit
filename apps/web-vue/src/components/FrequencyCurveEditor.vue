@@ -77,9 +77,6 @@ const freqTicks = [minCurveFrequencyHz, 27.5, 110.0, 440.0, 1760.0, maxCurveFreq
       </button>
     </div>
     <div class="curve-summary">{{ t('curve.drag_help') }}</div>
-    <div class="curve-summary">
-      {{ t('curve.selected_point', { frequency: formatFrequency(selectedPoint.frequency_hz), gain: formatGainDb(selectedPoint.gain_db) }) }}
-    </div>
     <svg
       class="curve-svg"
       :id="`curveSvg${layerIndex}`"
