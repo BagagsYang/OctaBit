@@ -1,92 +1,68 @@
-# AGENTS.md
+# Repository Guidelines
 
-## Repository overview
-This repository is a monorepo.
+## Project Structure & Module Organization
 
-- apps/web-flask: current active Flask web UI and deployable web service
-- apps/macos: deprecated/paused native SwiftUI macOS app, retained for reference
-- apps/windows: deprecated/paused native WinUI 3 Windows app, retained for reference
-- core/python-renderer: canonical Python renderer
-- assets/previews: shared waveform preview assets
+OctaBit is a monorepo focused on the web app. Work from the repository root unless a subproject README says otherwise.
 
-## Common setup
-Run commands from the repository root unless noted otherwise.
+- `apps/web-flask/`: active public Flask web UI, API routes, static CSS/JS, i18n catalogs, launchers, and `unittest` tests.
+- `apps/web-vue/`: parallel Vue/Vite frontend scaffold that proxies to the Flask API; it is not the production entrypoint unless explicitly changed.
+- `core/python-renderer/`: canonical MIDI-to-WAV renderer and renderer tests.
+- `assets/previews/`: shared waveform preview WAV files.
+- `deploy/web-flask/`, `compose.web.yml`, and `docs/`: deployment and API documentation.
+- `apps/macos/` and `apps/windows/`: deprecated/paused native apps retained for reference.
+
+## Build, Test, and Development Commands
+
+Create a local Python environment:
 
 ```bash
 python3 -m venv .venv
 ```
 
-On Windows:
-
-```powershell
-py -3 -m venv .venv
-```
-
-Install only the dependencies needed for the area you are touching:
+Install only the dependencies for the area you touch:
 
 ```bash
 ./.venv/bin/python3 -m pip install -r apps/web-flask/requirements.txt
-./.venv/bin/python3 -m pip install -r apps/macos/requirements-build.txt
 ./.venv/bin/python3 -m pip install -r core/python-renderer/requirements.txt
 ```
 
-On Windows, use the virtual environment's Python executable:
+Run the active Flask app:
 
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r apps\web-flask\requirements.txt
-.\.venv\Scripts\python.exe -m pip install -r core\python-renderer\requirements.txt
+```bash
+./.venv/bin/python3 apps/web-flask/app.py
 ```
 
-## Workflows and commands
+Run the Vue scaffold when needed:
 
-### Web Flask
-- Run locally: `./.venv/bin/python3 apps/web-flask/app.py`
-- macOS launcher: `apps/web-flask/Launch_Synthesiser.command`
-- Windows launcher: `apps\web-flask\Launch_Synthesiser.bat`
-- Tests: `./.venv/bin/python3 -m unittest discover -s apps/web-flask/tests`
+```bash
+cd apps/web-vue
+npm install
+npm run dev
+npm run build
+```
 
-### Python renderer
-- Entrypoint: `core/python-renderer/midi_to_wave.py`
-- Tests: `./.venv/bin/python3 -m unittest discover -s core/python-renderer/tests`
-- CLI supports input MIDI path, output WAV path, `--type`, `--duty`, `--rate`, and `--layers-json`.
+## Coding Style & Naming Conventions
 
-### macOS
-- The native macOS app is deprecated/paused and is not the main development target.
-- Build through Xcode with `apps/macos/MIDI8BitSynthesiser.xcodeproj` and the `MIDI8BitSynthesiser` scheme.
-- The Xcode build phase runs `apps/macos/macos/build_desktop_resources.sh`.
-- TODO: Add a command-line `xcodebuild` workflow after it is verified in repo usage.
+Prefer small, localized changes. Keep shared synthesis behavior in `core/python-renderer/`. For web UI strings, use `apps/web-flask/i18n/*.json` instead of hardcoding text in templates or JavaScript. Keep English as fallback and align `en.json`, `fr.json`, and `zh-CN.json` keys. Use descriptive Python names, TypeScript component names in PascalCase, and existing file naming patterns.
 
-### Windows
-- The native Windows app is deprecated/paused and is not the main development target.
-- Preflight: `dotnet --info`, `py -3 --version`, `py -3 -c "import pretty_midi, numpy, scipy"`; if `py -3` is unavailable, use `python --version` and `python -c "import pretty_midi, numpy, scipy"` instead.
-- Reference renderer dependencies for parity tests: `py -3 -m pip install -r core/python-renderer/requirements.txt`; if `py -3` is unavailable, use `python -m pip install -r core/python-renderer/requirements.txt`.
-- Restore: `dotnet restore apps/windows/Midi8BitSynthesiser.sln`
-- Build: `dotnet build apps/windows/Midi8BitSynthesiser.sln -c Release -p:Platform=x64`
-- Test: `dotnet test apps/windows/Midi8BitSynthesiser.sln -c Release -p:Platform=x64 --no-build`
-- Publish: `dotnet publish apps/windows/src/Midi8BitSynthesiser.App/Midi8BitSynthesiser.App.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64`
-- Review bundle: `apps/windows/scripts/create_review_bundle.sh`
+## Testing Guidelines
 
-## Localisation rules
-- Do not duplicate app source trees for Chinese.
-- Keep one codebase per platform.
-- Extract user-facing strings into platform-appropriate localisation resources.
-- Documentation may have parallel Chinese files named `*.zh-CN.md`.
-- Prefer English as the fallback locale.
-- Preserve existing behaviour unless the task explicitly asks for UI changes.
+Run checks for the touched area and report skipped checks.
 
-## Web app rules
-- Avoid keeping large inline JS in templates when adding localisation.
-- Prefer `i18n/*.json` plus separate JS helpers.
-- Do not change synthesis logic in `core/python-renderer` for localisation-only tasks.
-- Prefer `apps/web-flask/Launch_Synthesiser.command` or `apps/web-flask/Launch_Synthesiser.bat` when asks for running a server.
+```bash
+./.venv/bin/python3 -m unittest discover -s apps/web-flask/tests
+./.venv/bin/python3 -m unittest discover -s core/python-renderer/tests
+cd apps/web-vue && npm run build
+```
 
-## macOS rules
-- Use Apple-native localisation files.
-- Do not hardcode Chinese strings directly in Swift views.
+Name Python tests `test_*.py`. For web API or localization changes, add render-level or endpoint assertions where practical.
 
-## Windows rules
-- Use WinUI resource files (`.resw`) for localisation.
-- Do not hardcode Chinese strings directly in XAML if a resource key can be used.
+## Commit & Pull Request Guidelines
 
-## Validation
-After making changes, run only the checks relevant to the touched app and report what was and was not run.
+Recent history uses short imperative messages and lightweight prefixes such as `feat:`, `fix:`, and `docs:`. Keep commits focused, for example `fix: prevent duplicate waveform layers`.
+
+Pull requests should include a clear summary, touched areas, user-facing or deployment impact, screenshots for visible UI changes, linked issues when relevant, and the exact checks run. Note source and license details for new dependencies, vendored assets, or generated media.
+
+## Agent-Specific Instructions
+
+Treat `apps/web-flask/` as the current public app. Do not reframe it as legacy. Do not modify paused native apps unless the task explicitly targets them. Preserve existing behavior unless the request asks for a UI, API, or renderer change.
