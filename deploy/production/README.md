@@ -16,21 +16,21 @@ cutover unless the production plan changes.
 
 ## One-Time Server Shape
 
-Use a repository checkout such as `/srv/octabit`, a repo-local Python virtual
+Use a repository checkout such as `/home/deploy/octabit`, a repo-local Python virtual
 environment, the `octabit-web` systemd service for Gunicorn, and Caddy as the
 public server.
 
 Gunicorn should stay private:
 
 ```bash
-/srv/octabit/.venv/bin/python3 -m gunicorn --chdir /srv/octabit/apps/web-flask --bind 127.0.0.1:8000 --workers 2 --timeout 600 app:app
+/home/deploy/octabit/.venv/bin/python3 -m gunicorn --chdir /home/deploy/octabit/apps/web-flask --bind 127.0.0.1:8000 --workers 2 --timeout 600 app:app
 ```
 
 Install Node.js and npm from the server's normal package source before the Vue
 cutover. The Vue dependency install should use the lockfile:
 
 ```bash
-cd /srv/octabit/apps/web-vue
+cd /home/deploy/octabit/apps/web-vue
 npm ci
 npm run build
 ```
@@ -56,7 +56,7 @@ octabit.cc {
 	}
 
 	handle {
-		root * /srv/octabit/apps/web-vue/dist
+		root * /home/deploy/octabit/apps/web-vue/dist
 		try_files {path} /index.html
 		file_server
 	}
@@ -73,7 +73,7 @@ handled first.
 From the production VM:
 
 ```bash
-cd /srv/octabit
+cd /home/deploy/octabit
 git fetch --prune origin
 git checkout main
 git pull --ff-only origin main
@@ -81,7 +81,7 @@ git pull --ff-only origin main
 cd apps/web-vue
 npm ci
 npm run build
-cd /srv/octabit
+cd /home/deploy/octabit
 sudo systemctl restart octabit-web
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
@@ -100,13 +100,16 @@ After merge, the default helper script target is `main`:
 deploy/production/deploy-vue-production.sh
 ```
 
+Set `APP_DIR=/path/to/octabit` if the production checkout uses a different
+path.
+
 ## Smoke Checks
 
 Run local checks on the VM:
 
 ```bash
 curl -fsS http://127.0.0.1:8000/api/health
-test -f /srv/octabit/apps/web-vue/dist/index.html
+test -f /home/deploy/octabit/apps/web-vue/dist/index.html
 ```
 
 Run public checks after Caddy reload:

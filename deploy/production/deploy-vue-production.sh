@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-/srv/octabit}"
+APP_DIR="${APP_DIR:-${REPO_DIR:-/home/deploy/octabit}}"
 BRANCH="${BRANCH:-main}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
-VENV_DIR="${VENV_DIR:-$REPO_DIR/.venv}"
+VENV_DIR="${VENV_DIR:-$APP_DIR/.venv}"
 FLASK_SERVICE="${FLASK_SERVICE:-octabit-web}"
 CADDY_CONFIG="${CADDY_CONFIG:-/etc/caddy/Caddyfile}"
 RELOAD_CADDY="${RELOAD_CADDY:-1}"
 
-cd "$REPO_DIR"
+cd "$APP_DIR"
 
 git fetch --prune origin "$BRANCH"
 git checkout "$BRANCH"
@@ -24,7 +24,7 @@ fi
 cd apps/web-vue
 npm ci
 npm run build
-cd "$REPO_DIR"
+cd "$APP_DIR"
 
 sudo systemctl restart "$FLASK_SERVICE"
 sudo systemctl status "$FLASK_SERVICE" --no-pager --lines=20

@@ -12,19 +12,19 @@
 
 ## 一次性服务器形态
 
-建议使用 `/srv/octabit` 这样的仓库检出路径、仓库本地 Python 虚拟环境、用于 Gunicorn 的
+建议使用 `/home/deploy/octabit` 这样的仓库检出路径、仓库本地 Python 虚拟环境、用于 Gunicorn 的
 `octabit-web` systemd 服务，以及作为公开服务器的 Caddy。
 
 Gunicorn 应保持为私有监听：
 
 ```bash
-/srv/octabit/.venv/bin/python3 -m gunicorn --chdir /srv/octabit/apps/web-flask --bind 127.0.0.1:8000 --workers 2 --timeout 600 app:app
+/home/deploy/octabit/.venv/bin/python3 -m gunicorn --chdir /home/deploy/octabit/apps/web-flask --bind 127.0.0.1:8000 --workers 2 --timeout 600 app:app
 ```
 
 Vue 切换前，先用服务器常规软件源安装 Node.js 和 npm。Vue 依赖安装应使用 lockfile：
 
 ```bash
-cd /srv/octabit/apps/web-vue
+cd /home/deploy/octabit/apps/web-vue
 npm ci
 npm run build
 ```
@@ -50,7 +50,7 @@ octabit.cc {
 	}
 
 	handle {
-		root * /srv/octabit/apps/web-vue/dist
+		root * /home/deploy/octabit/apps/web-vue/dist
 		try_files {path} /index.html
 		file_server
 	}
@@ -65,7 +65,7 @@ octabit.cc {
 在生产 VM 上执行：
 
 ```bash
-cd /srv/octabit
+cd /home/deploy/octabit
 git fetch --prune origin
 git checkout main
 git pull --ff-only origin main
@@ -73,7 +73,7 @@ git pull --ff-only origin main
 cd apps/web-vue
 npm ci
 npm run build
-cd /srv/octabit
+cd /home/deploy/octabit
 sudo systemctl restart octabit-web
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
@@ -91,13 +91,15 @@ BRANCH=feature/vue-frontend deploy/production/deploy-vue-production.sh
 deploy/production/deploy-vue-production.sh
 ```
 
+如果生产检出路径不同，可设置 `APP_DIR=/path/to/octabit`。
+
 ## Smoke 检查
 
 在 VM 本机运行：
 
 ```bash
 curl -fsS http://127.0.0.1:8000/api/health
-test -f /srv/octabit/apps/web-vue/dist/index.html
+test -f /home/deploy/octabit/apps/web-vue/dist/index.html
 ```
 
 Caddy reload 后运行公开检查：
