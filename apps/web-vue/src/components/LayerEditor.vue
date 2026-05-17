@@ -24,6 +24,7 @@ const emit = defineEmits<{
   startCurvePointDrag: [layerIndex: number, pointIndex: number, event: PointerEvent];
   addLayer: [];
   removeLayer: [];
+  resetLayers: [];
   playPreview: [layerIndex: number];
 }>();
 
@@ -53,7 +54,12 @@ function isWaveDisabled(value: WaveType, layerIndex: number): boolean {
   <section class="module">
     <div class="module-header">
       <h2 class="module-title">{{ t('parameters.title') }}</h2>
-      <span class="module-readout">{{ t('parameters.readout') }}</span>
+      <div class="module-header-actions">
+        <button type="button" class="module-readout module-reset-btn" @click="emit('resetLayers')">
+          {{ t('parameters.reset') }}
+        </button>
+        <span class="module-readout">{{ t('parameters.readout') }}</span>
+      </div>
     </div>
 
     <div>

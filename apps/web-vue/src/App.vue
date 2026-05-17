@@ -383,6 +383,12 @@ function removeLayer() {
   scheduleWorkspaceConfigSave();
 }
 
+function resetLayers() {
+  layers.value = createDefaultLayers();
+  layerCount.value = 1;
+  scheduleWorkspaceConfigSave();
+}
+
 function playPreview(layerIndex: number) {
   const layer = layers.value[layerIndex];
   let src = `${layer.type}.wav`;
@@ -637,6 +643,7 @@ onUnmounted(() => {
             @start-curve-point-drag="startCurvePointDrag"
             @add-layer="addLayer"
             @remove-layer="removeLayer"
+            @reset-layers="resetLayers"
             @play-preview="playPreview"
           />
         </main>

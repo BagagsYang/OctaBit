@@ -467,6 +467,12 @@ input:focus-visible,
     margin-bottom: 12px;
 }
 
+.module-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .module-title {
     margin: 0;
     color: var(--text-color);
@@ -478,6 +484,7 @@ input:focus-visible,
 }
 
 .module-readout {
+    display: inline-block;
     min-width: 28px;
     padding: 2px 7px;
     border-radius: 5px;
@@ -486,6 +493,7 @@ input:focus-visible,
     border: 1px solid var(--curve-panel-border);
     font-family: var(--font-mono);
     font-size: 0.75rem;
+    line-height: 1.45;
     text-align: center;
 }
 
@@ -678,6 +686,25 @@ input:focus-visible,
     color: var(--subtle-text);
     cursor: not-allowed;
     opacity: 1;
+}
+
+.module-header-actions .module-reset-btn {
+    width: 52px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.module-header-actions .module-reset-btn:hover:not(:disabled) {
+    color: var(--primary-action-text-hover);
+    border-color: var(--accent-strong);
+    background: var(--primary-action-bg-hover);
+    box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+.module-header-actions .module-reset-btn:active:not(:disabled) {
+    transform: translateY(1px);
 }
 
 .control-row {
