@@ -2,9 +2,10 @@
 
 Language/语言: [English](./repository-layout.md) | 简体中文
 
-该仓库是 OctaBit 的单体仓库。OctaBit 是一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 工具。当前活跃目标是
-`apps/web-flask/` 中的公开 Flask/Gunicorn Web 服务，并面向 `octabit.cc` 发布。原生 macOS 和 Windows 应用已
-deprecated/paused，不再作为活跃开发目标；代码保留用于参考或未来可能的恢复。仓库还包含规范
+该仓库是 OctaBit 的单体仓库。OctaBit 是一个用于将 MIDI 文件转换为 8-bit 风格音乐的简单 Web 工具。当前生产
+Web 前端是 `apps/web-vue/` 中的 Vue 应用，并从 Vite `dist` 构建产物为 `octabit.cc`
+提供服务。`apps/web-flask/` 中的 Flask/Gunicorn 继续作为私有后端 API 和工作区/合成服务；其服务器端渲染前端保留为
+legacy fallback。原生 macOS 和 Windows 应用已 deprecated/paused，不再作为活跃开发目标；代码保留用于参考或未来可能的恢复。仓库还包含规范
 Python 渲染器、共享预览资源、API 契约文档、部署文件和发布文档。
 
 ## 顶层结构
@@ -14,13 +15,14 @@ Python 渲染器、共享预览资源、API 契约文档、部署文件和发布
 | `AGENTS.md` | 面向编码代理和本地工作流的仓库说明。 |
 | `README.md`, `README.zh-CN.md` | 根项目概览、设置说明、应用入口和仓库许可证摘要。 |
 | `LICENSE.md` | 仓库 AGPL 许可证文本。 |
-| `apps/` | 当前 Web 应用目标、保留的原生应用代码和桌面占位目录。 |
+| `apps/` | 生产 Vue 前端、Flask 后端/回退、保留的原生应用代码和桌面占位目录。 |
 | `core/python-renderer/` | 规范 Python MIDI 转 WAV 渲染器和对齐参考实现。 |
 | `assets/previews/` | 各应用共享的规范波形预览 WAV 文件。 |
 | `docs/` | API 契约、仓库结构说明、许可证审计和评审报告。 |
-| `deploy/web-flask/` | Flask Web 应用的 Docker 部署文档和 Dockerfile。 |
+| `deploy/digitalocean/` | Vue 生产路径的非 Docker DigitalOcean 部署说明、辅助脚本和 Caddy 示例。 |
+| `deploy/web-flask/` | Flask 后端或旧前端回退路径的 Docker 部署文档和 Dockerfile。 |
 | `.github/workflows/` | 保留的 Windows 发布构建 GitHub Actions 工作流。 |
-| `compose.web.yml` | Flask Web 部署的 Docker Compose 入口。 |
+| `compose.web.yml` | Flask 后端或旧前端回退路径的 Docker Compose 入口。 |
 | `global.json` | 保留的 Windows 解决方案使用的 .NET SDK 选择。 |
 | `.dockerignore`, `.gitignore`, `.gitattributes` | 仓库打包、忽略和换行规则。 |
 | `output/`, `tmp/` | 已跟踪的历史生成评审产物；两个路径都被忽略，用于未来生成输出。 |
@@ -30,9 +32,25 @@ Python 渲染器、共享预览资源、API 契约文档、部署文件和发布
 
 ## 应用目标
 
+### `apps/web-vue/`
+
+公开浏览器体验的生产 Vue/Vite 前端。
+
+- `index.html`：Vite 应用外壳。
+- `src/App.vue`：顶层 Vue 工作流和状态编排。
+- `src/api/`：Flask `/api/*` 路由的类型化客户端。
+- `src/components/`：上传队列、声音层编辑器、输出控制、头部控制、已转换文件和曲线编辑器组件。
+- `src/i18n/`：英文、法文和简体中文前端 catalog。
+- `src/styles/app.css`：从 Flask UI 复用的当前 OctaBit 视觉系统。
+- `vite.config.ts`：开发环境中把 `/api` 和 `/static/previews` 代理到
+  `http://127.0.0.1:8000`。
+- `package.json` 和 `package-lock.json`：Vue/Vite 依赖元数据。
+
+生产 Caddy 提供 `apps/web-vue/dist`，并把 API 和预览资源请求代理到 Flask/Gunicorn。
+
 ### `apps/web-flask/`
 
-项目当前活跃的 Flask / 浏览器 UI 和可部署 Web 服务。
+Flask 后端 API、工作区/合成服务、预览路由提供者，以及旧 Flask 渲染前端回退。
 
 - `app.py`：Flask 入口、上传处理、合成/API 端点、预览路由和服务器端渲染任务端点。
 - `synthesis_jobs.py`：基于文件系统的合成任务生命周期、清理和渲染线程编排。
@@ -44,7 +62,7 @@ Python 渲染器、共享预览资源、API 契约文档、部署文件和发布
 - `Launch_Synthesiser.command` 和 `Launch_Synthesiser.bat`：本地启动器。
 - `README.md`、`README.zh-CN.md`、`User_Guide.txt`：Web 应用文档。
 
-Web 应用将合成交给 `core/python-renderer/midi_to_wave.py`，并从
+Flask 后端将合成交给 `core/python-renderer/midi_to_wave.py`，并从
 `assets/previews/` 提供预览音频。
 
 ### `apps/macos/`
@@ -96,12 +114,12 @@ Web 服务期间，它保留用于参考或未来可能的恢复。
 - `tests/`：渲染器测试。
 - `README.md`：渲染器接口、层结构和依赖边界。
 
-渲染器接收平台无关的文件路径和波形层设置，然后将 WAV 文件写入磁盘。Web 应用会直接调用它；保留的
+渲染器接收平台无关的文件路径和波形层设置，然后将 WAV 文件写入磁盘。Flask 后端会直接调用它；保留的
 macOS 应用也会直接调用它，保留的 Windows 应用将它作为原生 C# 渲染器的对齐参考。
 
 ### `assets/previews/`
 
-Web 应用和保留的原生应用路径使用的规范预览 WAV 资源。`assets/README.md`
+Web 前端/后端路径和保留的原生应用路径使用的规范预览 WAV 资源。`assets/README.md`
 记录了它们的预期用途和来源说明。
 
 ## 文档和生成产物
@@ -156,33 +174,54 @@ dotnet publish apps/windows/src/Midi8BitSynthesiser.App/Midi8BitSynthesiser.App.
 已暂停的 macOS 应用通过 Xcode 使用 `MIDI8BitSynthesiser` scheme 构建。Xcode 构建阶段会运行
 `apps/macos/macos/build_desktop_resources.sh`。
 
-当前非 Docker 生产路径可以从 Python 虚拟环境运行 Flask Web 应用：Gunicorn 私有绑定到
-`127.0.0.1:8000`，systemd 管理服务，Caddy 将公开流量反向代理到该私有 Gunicorn
-监听地址。上传目录、任务 TTL、最大上传大小和 Gunicorn timeout 应与当前合成任务行为保持一致。
+Vue 开发时，先在 8000 端口运行 Flask 后端，再启动 Vite dev server：
 
-Docker 部署仍保留为另一种路径：
+```bash
+PORT=8000 WEB_FLASK_OPEN_BROWSER=0 ./.venv/bin/python3 apps/web-flask/app.py
+cd apps/web-vue
+npm ci
+npm run dev
+```
+
+Vue 生产构建：
+
+```bash
+cd apps/web-vue
+npm ci
+npm run build
+```
+
+当前非 Docker 生产路径从 Python 虚拟环境运行 Flask/Gunicorn：Gunicorn 私有绑定到
+`127.0.0.1:8000`，systemd 管理服务，Caddy 提供 `apps/web-vue/dist`，并将
+`/api/*`、`/static/previews/*` 和 `/synthesise*` 反向代理到该私有 Gunicorn
+监听地址。上传目录、任务 TTL、最大上传大小和 Gunicorn timeout 应与当前合成任务行为保持一致。Caddy
+生产和回滚示例见 `deploy/digitalocean/README.zh-CN.md`。
+
+Docker 部署仍保留为 Flask 后端或旧前端回退的另一种路径：
 
 ```bash
 docker compose -f compose.web.yml up -d --build
 ```
 
 Compose 文件将服务绑定到 `127.0.0.1:8000`，用于先通过隧道测试；镜像中只构建 Flask
-Web 应用、共享渲染器、共享预览资源和项目许可证。
+后端/回退、共享渲染器、共享预览资源和项目许可证。
 
 ## 依赖和打包边界
 
 - Python 渲染器依赖位于 `core/python-renderer/requirements.txt`。
 - Web 专用 Python 依赖位于 `apps/web-flask/requirements.txt`。
+- 生产前端 JavaScript 依赖位于 `apps/web-vue/package.json` 和
+  `apps/web-vue/package-lock.json`。
 - macOS 辅助构建依赖位于 `apps/macos/requirements-build.txt`。
 - Windows NuGet 版本位于 `apps/windows/Directory.Packages.props`。
-- 当前检出中没有 JavaScript 包管理器元数据；Web 应用目前使用本地静态 JavaScript/CSS，并在 HTML 模板中链接外部 Bootstrap 和 Google Fonts。
-- Docker 部署文件仅限 `apps/web-flask/` 范围。
+- Docker 部署文件仅限 Flask 后端/回退路径。
 - 保留的原生应用打包仍位于对应应用目录下。
 
 ## 归属边界
 
 - 共享渲染行为属于 `core/python-renderer/`。
-- Web UI、启动、打包和发布逻辑属于 `apps/web-flask/`。
+- 生产 Web UI 属于 `apps/web-vue/`。
+- Flask 后端 API 和旧 Flask 渲染前端回退逻辑属于 `apps/web-flask/`。
 - 保留的原生 UI、启动、打包和发布逻辑仍位于对应的 `apps/` 目录下。
 - 共享二进制/媒体资源属于 `assets/`。
 - 仓库级文档、审计和评审记录属于 `docs/`。

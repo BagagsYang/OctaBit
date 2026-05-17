@@ -10,10 +10,11 @@ pull request.
 
 OctaBit is a monorepo. The current active contribution targets are:
 
-- `apps/web-flask/`: the active public Flask/browser UI and deployable web
-  service.
+- `apps/web-vue/`: the production Vue browser frontend.
+- `apps/web-flask/`: the Flask backend API, workspace/synthesis service, and
+  legacy Flask-rendered frontend fallback.
 - `core/python-renderer/`: the canonical Python MIDI-to-WAV renderer.
-- `docs/`, `deploy/web-flask/`, and `assets/previews/`: supporting
+- `docs/`, `deploy/digitalocean/`, `deploy/web-flask/`, and `assets/previews/`: supporting
   documentation, deployment, and shared asset areas.
 
 The native macOS and Windows apps under `apps/macos/` and `apps/windows/` are
@@ -74,19 +75,23 @@ Install only the dependencies needed for the area you are touching:
 
 For app-specific notes, start with:
 
+- [apps/web-vue/README.md](./apps/web-vue/README.md)
 - [apps/web-flask/README.md](./apps/web-flask/README.md)
 - [core/python-renderer/README.md](./core/python-renderer/README.md)
-- [deploy/web-flask/README.md](./deploy/web-flask/README.md)
+- [deploy/digitalocean/README.md](./deploy/digitalocean/README.md)
 
 ## Making changes
 
-- Keep the Flask web app as the primary public app target.
+- Keep the Vue app as the production public frontend.
+- Keep the Flask app as the backend API and legacy Flask-rendered frontend fallback.
 - Keep shared synthesis behavior in `core/python-renderer/` unless the change is
   explicitly app-specific.
 - Do not duplicate app source trees for localisation. Use the existing
   localisation resources for the touched platform.
-- For `apps/web-flask/`, prefer `i18n/*.json` plus separate static JS/CSS over
-  adding large inline scripts or hardcoded user-facing strings in templates.
+- For `apps/web-vue/`, prefer `src/i18n/*.json` for user-facing UI strings.
+- For the legacy Flask-rendered UI in `apps/web-flask/`, prefer `i18n/*.json`
+  plus separate static JS/CSS over adding large inline scripts or hardcoded
+  user-facing strings in templates.
 - Keep English and Simplified Chinese documentation pairs aligned when changing
   paired docs.
 - Avoid unrelated refactors in feature or bug-fix pull requests.
@@ -112,6 +117,7 @@ For the web app:
 
 ```bash
 ./.venv/bin/python3 -m unittest discover -s apps/web-flask/tests
+cd apps/web-vue && npm run build
 ```
 
 For the Python renderer:

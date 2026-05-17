@@ -8,9 +8,10 @@ Language/语言: [English](./CONTRIBUTING.md) | 简体中文
 
 OctaBit 是一个单体仓库。当前活跃的贡献目标是：
 
-- `apps/web-flask/`：当前活跃的公开 Flask / 浏览器 UI 和可部署 Web 服务。
+- `apps/web-vue/`：生产 Vue 浏览器前端。
+- `apps/web-flask/`：Flask 后端 API、工作区/合成服务，以及旧 Flask 渲染前端回退。
 - `core/python-renderer/`：规范 Python MIDI 转 WAV 渲染器。
-- `docs/`、`deploy/web-flask/` 和 `assets/previews/`：配套文档、部署和共享资源区域。
+- `docs/`、`deploy/digitalocean/`、`deploy/web-flask/` 和 `assets/previews/`：配套文档、部署和共享资源区域。
 
 `apps/macos/` 和 `apps/windows/` 下的原生 macOS 与 Windows 应用是暂停/参考区域。若要在这些区域做较大的工作，请先开 issue，让维护者确认范围。
 
@@ -61,16 +62,20 @@ python3 -m venv .venv
 
 各区域说明可先阅读：
 
+- [apps/web-vue/README.md](./apps/web-vue/README.md)
 - [apps/web-flask/README.zh-CN.md](./apps/web-flask/README.zh-CN.md)
 - [core/python-renderer/README.zh-CN.md](./core/python-renderer/README.zh-CN.md)
-- [deploy/web-flask/README.zh-CN.md](./deploy/web-flask/README.zh-CN.md)
+- [deploy/digitalocean/README.zh-CN.md](./deploy/digitalocean/README.zh-CN.md)
 
 ## 修改代码或文档
 
-- 将 Flask Web 应用视为主要公开应用目标。
+- 将 Vue 应用视为生产公开前端。
+- 将 Flask 应用视为后端 API 和旧 Flask 渲染前端回退。
 - 共享合成行为应保留在 `core/python-renderer/`，除非该改动明确只属于某个应用。
 - 不要为了本地化复制应用源码树。请使用被修改平台已有的本地化资源。
-- 对 `apps/web-flask/`，优先使用 `i18n/*.json` 加独立静态 JS/CSS，避免在模板中加入大量内联脚本或硬编码面向用户的字符串。
+- 对 `apps/web-vue/`，优先使用 `src/i18n/*.json` 保存面向用户的 UI 字符串。
+- 对 `apps/web-flask/` 中的旧 Flask 渲染 UI，优先使用 `i18n/*.json` 加独立静态
+  JS/CSS，避免在模板中加入大量内联脚本或硬编码面向用户的字符串。
 - 修改成对文档时，请保持英文和简体中文版本一致。
 - 在功能或 bug 修复 pull request 中避免无关重构。
 
@@ -93,6 +98,7 @@ Web 应用：
 
 ```bash
 ./.venv/bin/python3 -m unittest discover -s apps/web-flask/tests
+cd apps/web-vue && npm run build
 ```
 
 Python 渲染器：

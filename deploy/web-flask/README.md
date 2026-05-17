@@ -1,8 +1,17 @@
-# Flask Web Docker Deployment
+# Flask Backend Docker Deployment
 
 Language/语言: English | [简体中文](./README.zh-CN.md)
 
-This deployment is for the browser-based OctaBit Flask app only. The image includes `apps/web-flask/`, the shared renderer entrypoint in `core/python-renderer/`, the shared preview WAV files in `assets/previews/`, and the project licence. It does not package the macOS or Windows desktop apps.
+This Docker path packages the Flask backend and legacy Flask-rendered frontend
+fallback. The intended DigitalOcean production path is non-Docker: Caddy serves
+the Vue build from `apps/web-vue/dist` and reverse proxies API/preview/legacy
+routes to Flask/Gunicorn on `127.0.0.1:8000`. See
+`../digitalocean/README.md`.
+
+The image includes `apps/web-flask/`, the shared renderer entrypoint in
+`core/python-renderer/`, the shared preview WAV files in `assets/previews/`,
+and the project licence. It does not package the Vue frontend, macOS app, or
+Windows desktop app.
 
 The compose file binds the container to `127.0.0.1:8000` on the server so the first deployment can be tested through SSH tunnelling before any public reverse proxy is added.
 
@@ -67,4 +76,7 @@ docker compose -f compose.web.yml down
 - Workspace files are kept for `WEB_WORKSPACE_TTL_SECONDS` seconds after last activity, defaulting to 86400 seconds. The default caps are 20 queued files, 100 MiB active MIDI uploads, and 20 converted files per workspace.
 - Legacy ready render jobs are kept for `WEB_DOWNLOAD_TTL_SECONDS` seconds, defaulting to 1800 seconds. When a user clears the queue or converted files list, the browser asks the server to delete the corresponding temporary files immediately.
 - The host port is intentionally bound to `127.0.0.1:8000` for tunnel-only testing.
-- For public deployment on `octabit.cc`, put Caddy or Nginx in front of this service and expose only ports 80 and 443 publicly. Keep the Flask/Gunicorn service private to the server or Docker network.
+- For Vue production on `octabit.cc`, serve `apps/web-vue/dist` from Caddy and
+  reverse proxy `/api/*`, `/static/previews/*`, and `/synthesise*` to this
+  service. Keep the Flask/Gunicorn service private to the server or Docker
+  network.

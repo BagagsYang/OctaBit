@@ -8,17 +8,19 @@ Language/语言: English | [简体中文](./README.zh-CN.md)
 
 OctaBit is a browser-based tool for converting MIDI files into 8-bit style WAV audio. The public service is <https://octabit.cc>.
 
-This repository now focuses on the Flask web app. The active application lives in `apps/web-flask/`, and synthesis is delegated to the canonical Python renderer in `core/python-renderer/`. The native macOS and Windows apps are deprecated/paused and retained only for reference or possible future revival.
+The production web frontend is the Vue 3 app in `apps/web-vue/`. Flask remains the backend API and workspace/synthesis service in `apps/web-flask/`, delegating audio rendering to the canonical Python renderer in `core/python-renderer/`. The older Flask-rendered frontend is retained in the repository as a legacy fallback. The native macOS and Windows apps are deprecated/paused and retained only for reference or possible future revival.
 
 ## What Is Active
 
 | Path | Role |
 | --- | --- |
-| `apps/web-flask/` | Current Flask browser UI, API routes, static assets, launchers, and web tests |
-| `core/python-renderer/` | Canonical MIDI-to-WAV renderer used by the web app |
-| `assets/previews/` | Shared waveform preview WAV files served by the web app |
-| `deploy/web-flask/` | Docker image definition and deployment notes for the web app |
-| `compose.web.yml` | Minimal Docker Compose entrypoint for the web app |
+| `apps/web-vue/` | Production Vue 3 frontend served from the Vite `dist` build |
+| `apps/web-flask/` | Flask backend API, workspace/synthesis service, preview routes, tests, and legacy Flask-rendered frontend |
+| `core/python-renderer/` | Canonical MIDI-to-WAV renderer used by the Flask backend |
+| `assets/previews/` | Shared waveform preview WAV files served through the Flask backend |
+| `deploy/digitalocean/` | Non-Docker DigitalOcean production deployment notes, helper script, and Caddy examples for Vue production |
+| `deploy/web-flask/` | Docker image definition and notes for the Flask backend or legacy fallback path |
+| `compose.web.yml` | Minimal Docker Compose entrypoint for the Flask backend or legacy fallback path |
 | `docs/api-contract.md` | Web API request and response contract |
 
 Retained native app folders:
@@ -35,14 +37,23 @@ From the repository root:
 ```bash
 python3 -m venv .venv
 ./.venv/bin/python3 -m pip install -r apps/web-flask/requirements.txt
-./.venv/bin/python3 apps/web-flask/app.py
+PORT=8000 WEB_FLASK_OPEN_BROWSER=0 ./.venv/bin/python3 apps/web-flask/app.py
 ```
 
-You can also use the launcher scripts:
+In another terminal, run the Vue frontend:
 
 ```bash
-apps/web-flask/Launch_Synthesiser.command
-apps\web-flask\Launch_Synthesiser.bat
+cd apps/web-vue
+npm ci
+npm run dev
+```
+
+Open `http://127.0.0.1:5173/`. Vite proxies `/api/*` and `/static/previews/*` to Flask on `127.0.0.1:8000`.
+
+The legacy Flask-rendered frontend can still be opened directly from Flask for fallback testing:
+
+```bash
+./.venv/bin/python3 apps/web-flask/app.py
 ```
 
 Run the active web tests:
@@ -50,6 +61,7 @@ Run the active web tests:
 ```bash
 ./.venv/bin/python3 -m unittest discover -s apps/web-flask/tests
 ./.venv/bin/python3 -m unittest discover -s core/python-renderer/tests
+cd apps/web-vue && npm run build
 ```
 
 ## User Limits
@@ -82,7 +94,7 @@ Queued uploads and converted WAV files are temporary. When users clear queued or
 
 ## Web API
 
-The browser uses anonymous, cookie-backed temporary workspaces. `GET /api/workspace` creates or restores the workspace, and resource routes require the active workspace cookie. The full API contract is in `docs/api-contract.md`.
+The Vue frontend uses anonymous, cookie-backed temporary workspaces through the Flask API. `GET /api/workspace` creates or restores the workspace, and resource routes require the active workspace cookie. The full API contract is in `docs/api-contract.md`.
 
 Primary routes:
 
@@ -121,21 +133,22 @@ The hash is derived from the sanitised layer payload, so different curve setting
 
 ## Localisation
 
-The web UI uses JSON catalog files in `apps/web-flask/i18n/`. Keep `en.json`, `fr.json`, and `zh-CN.json` key sets aligned. English is the fallback locale.
+The production Vue UI keeps JSON catalog files under `apps/web-vue/src/i18n/`. The legacy Flask-rendered UI keeps its catalogs under `apps/web-flask/i18n/`. Keep `en.json`, `fr.json`, and `zh-CN.json` key sets aligned in any catalog set you touch. English is the fallback locale.
 
 User-facing web strings should go through the catalog rather than being hardcoded in templates or JavaScript. Native macOS and Windows localisation work is out of scope while those apps remain paused.
 
 ## Deployment
 
-The current production model can run without Docker:
+The intended production model runs without Docker:
 
 ```bash
 ./.venv/bin/python3 -m gunicorn --chdir apps/web-flask --bind 127.0.0.1:8000 --workers 2 --timeout 600 app:app
+cd apps/web-vue && npm ci && npm run build
 ```
 
-For public deployment, keep Gunicorn private to the server or Docker network and put Caddy or Nginx in front of it. Docker deployment notes are in `deploy/web-flask/README.md`.
+For public deployment, keep Gunicorn private on `127.0.0.1:8000`. Caddy serves `apps/web-vue/dist` as the public frontend and reverse proxies `/api/*`, `/static/previews/*`, and `/synthesise*` to Flask. DigitalOcean deployment notes, Caddy examples, smoke checks, and rollback steps are in `deploy/digitalocean/README.md`.
 
-The Docker image pins its Python base image by digest and installs from hash-locked requirement files in `deploy/web-flask/`.
+The Docker image in `deploy/web-flask/` remains available for a Flask-backend or legacy Flask-rendered fallback path. It pins its Python base image by digest and installs from hash-locked requirement files.
 
 ## License
 

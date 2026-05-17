@@ -11,21 +11,22 @@ redistribution, or ownership are marked for human or legal review.
 
 This audit covered the repository root and the current tracked file set, with
 local ignored build/cache folders inspected only to understand build outputs.
-The project direction is currently focused on the Flask/Gunicorn web service;
-native macOS and Windows release paths remain documented here only because the
-code and packaging files are retained for reference or possible future revival.
+The project direction is currently focused on the Vue production frontend plus
+Flask/Gunicorn backend service; native macOS and Windows release paths remain
+documented here only because the code and packaging files are retained for
+reference or possible future revival.
 
 Reviewed repository areas:
 
 - Root documentation and licence files: `README.md`, `README.zh-CN.md`,
   `LICENSE.md`, `AGENTS.md`, `.gitattributes`, `.gitignore`, `.dockerignore`.
-- Current app target and retained app code: `apps/web-flask/`, `apps/macos/`,
-  `apps/windows/`, and the placeholder `apps/desktop/`.
+- Current app target and retained app code: `apps/web-vue/`, `apps/web-flask/`,
+  `apps/macos/`, `apps/windows/`, and the placeholder `apps/desktop/`.
 - Shared code and assets: `core/python-renderer/` and `assets/previews/`.
 - Documentation and generated review artefacts: `docs/`, tracked files under
   `output/pdf/`, and tracked files under `tmp/pdfs/`.
-- Deployment and packaging: `deploy/web-flask/Dockerfile`, `compose.web.yml`,
-  `apps/windows/installer/Midi8BitSynthesiser.iss`,
+- Deployment and packaging: `deploy/digitalocean/`, `deploy/web-flask/Dockerfile`,
+  `compose.web.yml`, `apps/windows/installer/Midi8BitSynthesiser.iss`,
   `apps/windows/scripts/create_review_bundle.sh`, and the macOS Xcode build
   phase script.
 - CI/CD: `.github/workflows/windows-release.yml`.
@@ -46,6 +47,8 @@ Dependency and packaging sources found:
   - `apps/macos/MIDI8BitSynthesiser.xcodeproj/project.pbxproj`
   - `apps/macos/macos/build_desktop_resources.sh`
 - Web runtime resources:
+  - Vue frontend package metadata in `apps/web-vue/package.json` and
+    `apps/web-vue/package-lock.json`
   - CDN Bootstrap CSS in `apps/web-flask/templates/index.html`
   - Google-hosted IBM Plex Sans and IBM Plex Mono font CSS in the same template
 - Docker and deployment:
@@ -57,11 +60,13 @@ Dependency and packaging sources found:
 
 Dependency sources not found in the current checkout:
 
-- No `package.json`, JavaScript lockfile, workspace file, or Node package
-  manager metadata.
 - No `pyproject.toml`, `poetry.lock`, `uv.lock`, `Pipfile`, or Python lockfile.
 - No Swift Package Manager, CocoaPods, or Carthage dependency file.
 - No checked-in NuGet lockfile or restored `project.assets.json`.
+
+The npm dependency licence closure for `apps/web-vue/` should be refreshed
+before distributing built frontend artefacts outside the live source
+deployment.
 
 ## Repository licence status
 
@@ -170,8 +175,8 @@ Important Windows App SDK observation:
 
 ### Web CDN and font resources
 
-Source: `apps/web-flask/templates/index.html`; registry/upstream metadata
-checked for the specific named resources.
+Source: legacy Flask template `apps/web-flask/templates/index.html`;
+registry/upstream metadata checked for the specific named resources.
 
 | Resource | Version/source | Licence evidence | Notes |
 | --- | --- | --- | --- |
@@ -270,9 +275,9 @@ The Flask web UI vendors copied Lucide SVG path data in
 recorded in the file comment and in the web resource table above.
 
 No separate vendored source tree, checked-in font file, checked-in standalone
-icon file, checked-in JavaScript package, checked-in MIDI example file, or
-checked-in image asset was found outside the generated review artefacts listed
-above.
+icon file, checked-in MIDI example file, or checked-in image asset was found
+outside the generated review artefacts listed above. The Vue package metadata
+records npm dependencies but does not vendor their source into the repository.
 
 ## Potential licence risks or unknowns
 
@@ -364,6 +369,7 @@ For binary, installer, app bundle, or Docker image distribution:
 - For active web development, run a lightweight quarterly audit that compares
   the current dependency manifests, package metadata, and release artefacts
   against this document.
-- Treat the Docker image as the current active release artefact. Treat the
-  Windows self-contained app and macOS PyInstaller helper as separate release
-  artefacts if native work is revived.
+- Treat the Vue `dist` output plus Flask/Gunicorn backend as the current active
+  release artefact. Treat the Docker image as a backend/fallback artefact, and
+  the Windows self-contained app and macOS PyInstaller helper as separate
+  release artefacts if native work is revived.

@@ -2,7 +2,10 @@
 
 Language/语言: [English](./README.md) | 简体中文
 
-Web 应用使用此目录中的 JSON 目录，同时服务于 Flask 渲染的 HTML 和 `templates/index.html` 中的浏览器 UI。请保持 `en.json`、`fr.json` 和 `zh-CN.json` 的键集合对齐；英文仍是回退语言。
+旧 Flask 渲染前端使用此目录中的 JSON 目录，同时服务于 Flask 渲染的 HTML 和
+`templates/index.html` 中的浏览器 UI。生产 Vue 前端的 catalog 副本位于
+`apps/web-vue/src/i18n/`。修改任一 catalog 集合时，请保持 `en.json`、`fr.json`
+和 `zh-CN.json` 的键集合对齐；英文仍是回退语言。
 
 ## 法语切片覆盖范围
 

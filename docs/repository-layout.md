@@ -3,12 +3,15 @@
 Language/语言: English | [简体中文](./repository-layout.zh-CN.md)
 
 This repository is a monorepo for OctaBit, a simple web tool for converting
-MIDI files into 8-bit style music. The current active target is the public
-Flask/Gunicorn web service in `apps/web-flask/`, published for `octabit.cc`.
-The native macOS and Windows apps are deprecated/paused, not actively developed,
-and retained for reference or possible future revival. The repository also
-contains the canonical Python renderer, shared preview assets, API contract
-documentation, deployment files, and release documentation.
+MIDI files into 8-bit style music. The current production web frontend is the
+Vue app in `apps/web-vue/`, served from its Vite `dist` build for
+`octabit.cc`. Flask/Gunicorn in `apps/web-flask/` remains the private backend
+API and workspace/synthesis service, and its server-rendered frontend is kept
+as a legacy fallback. The native macOS and Windows apps are deprecated/paused,
+not actively developed, and retained for reference or possible future revival.
+The repository also contains the canonical Python renderer, shared preview
+assets, API contract documentation, deployment files, and release
+documentation.
 
 ## Top-level map
 
@@ -17,13 +20,14 @@ documentation, deployment files, and release documentation.
 | `AGENTS.md` | Repository instructions for coding agents and local workflows. |
 | `README.md`, `README.zh-CN.md` | Root project overview, setup notes, app entry points, and repository licence summary. |
 | `LICENSE.md` | Repository AGPL licence text. |
-| `apps/` | Current web app target, retained native app code, and the reserved desktop placeholder. |
+| `apps/` | Production Vue frontend, Flask backend/fallback, retained native app code, and the reserved desktop placeholder. |
 | `core/python-renderer/` | Canonical Python MIDI-to-WAV renderer and parity reference. |
 | `assets/previews/` | Canonical waveform preview WAV files shared by the apps. |
 | `docs/` | API contract, repository layout notes, licensing audit, and review reports. |
-| `deploy/web-flask/` | Docker deployment documentation and Dockerfile for the Flask web app. |
+| `deploy/digitalocean/` | Non-Docker DigitalOcean production deployment notes, helper script, and Caddy examples for Vue production. |
+| `deploy/web-flask/` | Docker deployment documentation and Dockerfile for the Flask backend or legacy fallback path. |
 | `.github/workflows/` | Retained GitHub Actions workflow for Windows release builds. |
-| `compose.web.yml` | Docker Compose entry point for the Flask web deployment. |
+| `compose.web.yml` | Docker Compose entry point for the Flask backend or legacy fallback path. |
 | `global.json` | .NET SDK selection for the retained Windows solution. |
 | `.dockerignore`, `.gitignore`, `.gitattributes` | Repository packaging, ignore, and line-ending rules. |
 | `output/`, `tmp/` | Tracked historical generated review artefacts; both paths are ignored for future generated output. |
@@ -34,9 +38,28 @@ part of the maintained source layout.
 
 ## Application targets
 
+### `apps/web-vue/`
+
+Production Vue/Vite frontend for the public browser experience.
+
+- `index.html`: Vite application shell.
+- `src/App.vue`: top-level Vue workflow and state orchestration.
+- `src/api/`: typed client for the Flask `/api/*` routes.
+- `src/components/`: upload queue, layer editor, output controls, header
+  controls, converted files, and curve editor components.
+- `src/i18n/`: English, French, and Simplified Chinese frontend catalogs.
+- `src/styles/app.css`: current OctaBit visual system reused from the Flask UI.
+- `vite.config.ts`: development proxy for `/api` and `/static/previews` to
+  `http://127.0.0.1:8000`.
+- `package.json` and `package-lock.json`: Vue/Vite dependency metadata.
+
+Production Caddy serves `apps/web-vue/dist` and proxies API plus preview asset
+requests to Flask/Gunicorn.
+
 ### `apps/web-flask/`
 
-Current active Flask/browser UI and deployable web service for the project.
+Flask backend API, workspace/synthesis service, preview route provider, and
+legacy Flask-rendered frontend fallback.
 
 - `app.py`: Flask entry point, upload handling, synthesis/API endpoints,
   preview routes, and server-side render job endpoints.
@@ -51,8 +74,8 @@ Current active Flask/browser UI and deployable web service for the project.
 - `Launch_Synthesiser.command` and `Launch_Synthesiser.bat`: local launchers.
 - `README.md`, `README.zh-CN.md`, `User_Guide.txt`: web app documentation.
 
-The web app delegates synthesis to `core/python-renderer/midi_to_wave.py` and
-serves preview audio from `assets/previews/`.
+The Flask backend delegates synthesis to `core/python-renderer/midi_to_wave.py`
+and serves preview audio from `assets/previews/`.
 
 ### `apps/macos/`
 
@@ -118,14 +141,15 @@ Canonical Python MIDI-to-WAV renderer.
 - `README.md`: renderer interface, layer schema, and dependency boundary.
 
 The renderer accepts platform-neutral file paths and waveform layer settings,
-then writes a WAV file to disk. The web app calls it directly. The retained
-macOS app also calls it directly, and the retained Windows app uses it as the
-parity reference for the native C# renderer.
+then writes a WAV file to disk. The Flask backend calls it directly. The
+retained macOS app also calls it directly, and the retained Windows app uses it
+as the parity reference for the native C# renderer.
 
 ### `assets/previews/`
 
-Canonical preview WAV assets used by the web app and retained native app paths.
-`assets/README.md` records their intended usage and provenance.
+Canonical preview WAV assets used by the web frontend/backend path and retained
+native app paths. `assets/README.md` records their intended usage and
+provenance.
 
 ## Documentation and generated artefacts
 
@@ -186,38 +210,60 @@ The paused macOS app builds through Xcode with the `MIDI8BitSynthesiser`
 scheme. The Xcode build phase runs
 `apps/macos/macos/build_desktop_resources.sh`.
 
-The current non-Docker production path can run the Flask web app from a Python
-virtual environment, with Gunicorn bound privately to `127.0.0.1:8000`, systemd
-managing the service, and Caddy reverse proxying public traffic to that private
-Gunicorn listener. Keep the upload directory, job TTL, maximum upload size, and
-Gunicorn timeout aligned with the current synthesis job behaviour.
+For Vue development, run the Flask backend on port 8000 and then the Vite dev
+server:
 
-The Docker deployment remains available as an alternate path:
+```bash
+PORT=8000 WEB_FLASK_OPEN_BROWSER=0 ./.venv/bin/python3 apps/web-flask/app.py
+cd apps/web-vue
+npm ci
+npm run dev
+```
+
+For Vue production builds:
+
+```bash
+cd apps/web-vue
+npm ci
+npm run build
+```
+
+The current non-Docker production path runs Flask/Gunicorn from a Python
+virtual environment, with Gunicorn bound privately to `127.0.0.1:8000`, systemd
+managing the service, and Caddy serving `apps/web-vue/dist` while reverse
+proxying `/api/*`, `/static/previews/*`, and `/synthesise*` to that private
+Gunicorn listener. Keep the upload directory, job TTL, maximum upload size, and
+Gunicorn timeout aligned with the current synthesis job behaviour. See
+`deploy/digitalocean/README.md` for the Caddy production and rollback examples.
+
+The Docker deployment remains available as an alternate Flask-backend or legacy
+fallback path:
 
 ```bash
 docker compose -f compose.web.yml up -d --build
 ```
 
 The compose file binds the service to `127.0.0.1:8000` for tunnel-first testing
-and builds only the Flask web app, shared renderer, shared preview assets, and
-project licence into the image.
+and builds only the Flask backend/fallback, shared renderer, shared preview
+assets, and project licence into the image.
 
 ## Dependency and packaging boundaries
 
 - Python renderer dependencies live in `core/python-renderer/requirements.txt`.
 - Web-only Python dependencies live in `apps/web-flask/requirements.txt`.
+- Production frontend JavaScript dependencies live in `apps/web-vue/package.json`
+  and `apps/web-vue/package-lock.json`.
 - macOS helper build dependencies live in `apps/macos/requirements-build.txt`.
 - Windows NuGet versions live in `apps/windows/Directory.Packages.props`.
-- There is no JavaScript package manager metadata in this checkout; the web app
-  currently uses static local JavaScript/CSS plus external Bootstrap and Google
-  Fonts links from the HTML template.
-- Docker deployment files are scoped to `apps/web-flask/`.
+- Docker deployment files are scoped to the Flask backend/fallback path.
 - Retained native app packaging stays under the relevant app folder.
 
 ## Ownership boundaries
 
 - Shared renderer behaviour belongs in `core/python-renderer/`.
-- Web UI, launch, packaging, and release logic belongs under `apps/web-flask/`.
+- Production web UI belongs under `apps/web-vue/`.
+- Flask backend API and legacy Flask-rendered fallback logic belongs under
+  `apps/web-flask/`.
 - Retained native UI, launch, packaging, and release logic stays under the
   relevant `apps/` folder.
 - Shared binary/media assets belong under `assets/`.

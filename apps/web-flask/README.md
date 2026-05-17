@@ -2,15 +2,17 @@
 
 Language/语言: English | [简体中文](./README.zh-CN.md)
 
-This folder contains the primary browser-distributed version of OctaBit. The public site for the service is <https://octabit.cc>.
+This folder contains the Flask backend for OctaBit and the legacy Flask-rendered
+frontend fallback. The public production frontend is now the Vue app in
+`../web-vue/`, served from its Vite `dist` build.
 
 ## Responsibilities
 
 - Flask entrypoint and request handling
-- HTML templates and web-specific static assets
+- Backend API routes for workspace, upload, synthesis, download, and preview assets
+- HTML templates and web-specific static assets for the legacy Flask-rendered fallback
 - Launcher script
-- Browser UI only; synthesis is delegated to the Python renderer in `../../core/python-renderer/`
-- Phase 1 proving UI for per-layer frequency-gain curves
+- Synthesis delegation to the Python renderer in `../../core/python-renderer/`
 
 ## Run
 
@@ -43,7 +45,8 @@ This app serves preview WAVs from the shared asset folder and should not duplica
 
 ## Current API contract
 
-The browser UI uses cookie-backed anonymous temporary workspaces. Uploaded MIDI
+The production Vue frontend and legacy Flask-rendered fallback use
+cookie-backed anonymous temporary workspaces. Uploaded MIDI
 files, sound configuration, and converted WAV links are restored through
 `/api/workspace` after refresh. The full contract lives in
 `../../docs/api-contract.md`.
@@ -81,13 +84,15 @@ migrated later.
 
 ## Production notes
 
-The current production model can run without Docker:
+The intended production model can run without Docker:
 
 - Install `apps/web-flask/requirements.txt` into the repo-local virtual environment.
 - Run Gunicorn against `app:app` from `apps/web-flask/`.
 - Bind Gunicorn privately to `127.0.0.1:8000`.
 - Manage Gunicorn with systemd, for example through the `octabit-web` service.
-- Use Caddy as the public reverse proxy to `127.0.0.1:8000`.
+- Build the Vue frontend with `npm ci && npm run build` in `../web-vue/`.
+- Use Caddy to serve `../web-vue/dist` publicly and reverse proxy `/api/*`,
+  `/static/previews/*`, and `/synthesise*` to `127.0.0.1:8000`.
 - Keep `WEB_SYNTHESISE_JOB_ROOT`, `WEB_WORKSPACE_TTL_SECONDS`,
   `WEB_WORKSPACE_MAX_QUEUED_FILES`, `WEB_WORKSPACE_MAX_UPLOAD_BYTES`,
   `WEB_WORKSPACE_MAX_CONVERTED_FILES`, `WEB_DOWNLOAD_TTL_SECONDS`,
@@ -101,7 +106,9 @@ Example Gunicorn shape:
 ```
 
 The Docker files under `../../deploy/web-flask/` and `../../compose.web.yml`
-remain an alternate deployment path.
+remain an alternate Flask-backend or legacy Flask-rendered fallback deployment
+path. The current DigitalOcean production path is documented in
+`../../deploy/digitalocean/README.md`.
 
 ## Output naming
 

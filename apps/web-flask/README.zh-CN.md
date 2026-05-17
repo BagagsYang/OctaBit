@@ -2,15 +2,16 @@
 
 Language/语言: [English](./README.md) | 简体中文
 
-此目录包含通过浏览器分发的 OctaBit 主要实现。该服务的公开站点是 <https://octabit.cc>。
+此目录包含 OctaBit 的 Flask 后端和旧 Flask 渲染前端回退。公开生产前端现在是
+`../web-vue/` 中的 Vue 应用，并从其 Vite `dist` 构建产物提供服务。
 
 ## 职责
 
 - Flask 入口点与请求处理
-- HTML 模板与 Web 专用静态资源
+- 工作区、上传、合成、下载和预览资源的后端 API 路由
+- 供旧 Flask 渲染前端回退使用的 HTML 模板与 Web 专用静态资源
 - 启动脚本
-- 仅包含浏览器 UI；合成工作委托给 `../../core/python-renderer/` 中的 Python 渲染器
-- 用于验证按层频率-增益曲线 UI 的第一阶段方案
+- 将合成工作委托给 `../../core/python-renderer/` 中的 Python 渲染器
 
 ## 运行
 
@@ -43,7 +44,7 @@ apps\web-flask\Launch_Synthesiser.bat
 
 ## 当前 API 契约
 
-浏览器 UI 使用基于 cookie 的匿名临时工作区。上传的 MIDI 文件、声音配置和已转换
+生产 Vue 前端和旧 Flask 渲染回退都使用基于 cookie 的匿名临时工作区。上传的 MIDI 文件、声音配置和已转换
 WAV 链接会在刷新后通过 `/api/workspace` 恢复。完整契约位于
 `../../docs/api-contract.zh-CN.md`。
 
@@ -76,13 +77,15 @@ API 错误使用 `{"error":{"code":"...","message":"..."}}`。兼容路由继续
 
 ## 生产部署说明
 
-当前生产模型可以不使用 Docker：
+预期生产模型可以不使用 Docker：
 
 - 将 `apps/web-flask/requirements.txt` 安装到仓库本地虚拟环境。
 - 从 `apps/web-flask/` 运行指向 `app:app` 的 Gunicorn。
 - 将 Gunicorn 私有绑定到 `127.0.0.1:8000`。
 - 使用 systemd 管理 Gunicorn，例如通过 `octabit-web` 服务。
-- 使用 Caddy 作为公开反向代理，转发到 `127.0.0.1:8000`。
+- 在 `../web-vue/` 中用 `npm ci && npm run build` 构建 Vue 前端。
+- 使用 Caddy 公开提供 `../web-vue/dist`，并将 `/api/*`、`/static/previews/*`
+  和 `/synthesise*` 反向代理到 `127.0.0.1:8000`。
 - 让 `WEB_SYNTHESISE_JOB_ROOT`、`WEB_WORKSPACE_TTL_SECONDS`、
   `WEB_WORKSPACE_MAX_QUEUED_FILES`、`WEB_WORKSPACE_MAX_UPLOAD_BYTES`、
   `WEB_WORKSPACE_MAX_CONVERTED_FILES`、`WEB_DOWNLOAD_TTL_SECONDS`、
@@ -95,7 +98,8 @@ Gunicorn 命令形态示例：
 ```
 
 `../../deploy/web-flask/` 下的 Docker 文件和 `../../compose.web.yml`
-仍保留为另一种部署路径。
+仍保留为 Flask 后端或旧 Flask 渲染前端回退的另一种部署路径。当前 DigitalOcean 生产路径记录在
+`../../deploy/digitalocean/README.zh-CN.md`。
 
 ## 输出命名
 

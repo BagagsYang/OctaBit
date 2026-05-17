@@ -2,13 +2,17 @@
 
 Language/语言: English | [简体中文](./api-contract.zh-CN.md)
 
-This document describes the browser-facing API boundary for the current
-Flask/Gunicorn OctaBit web service. The web UI is server-rendered by Flask, and
-synthesis still uses the canonical Python renderer in `core/python-renderer/`.
+This document describes the browser-facing API boundary for the Flask/Gunicorn
+OctaBit backend. The production web frontend is the Vue app in `apps/web-vue/`,
+served by Caddy from its Vite `dist` build. Flask remains the private backend
+API and workspace/synthesis service, and synthesis still uses the canonical
+Python renderer in `core/python-renderer/`.
 
 ## Scope
 
-- New frontend code should use the `/api/*` routes.
+- Production frontend code should use the `/api/*` routes.
+- In production, Caddy should reverse proxy `/api/*`, `/static/previews/*`, and
+  `/synthesise*` to Flask/Gunicorn on `127.0.0.1:8000`.
 - Legacy `/synthesise*` routes remain for compatibility.
 - Anonymous temporary workspaces use a random HttpOnly cookie named
   `octabit_workspace`.
@@ -405,5 +409,5 @@ The legacy routes remain available:
 - `DELETE /synthesise/jobs/<job_id>`
 
 Legacy JSON errors generally use `{"error": "message"}` and ready legacy job
-payloads return `/synthesise/jobs/...` links. New frontend code should use the
-`/api/*` routes.
+payloads return `/synthesise/jobs/...` links. Production frontend code should
+use the `/api/*` routes.

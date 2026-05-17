@@ -2,10 +2,11 @@
 
 Language/语言: English | [简体中文](./README.zh-CN.md)
 
-The web app uses the JSON catalogs in this directory for both Flask-rendered
-HTML and the inline browser UI in `templates/index.html`. Keep the key sets in
-`en.json`, `fr.json`, and `zh-CN.json` aligned; English remains the fallback
-locale.
+The legacy Flask-rendered frontend uses the JSON catalogs in this directory for
+Flask-rendered HTML and the inline browser UI in `templates/index.html`. The
+production Vue frontend keeps its copied catalogs in `apps/web-vue/src/i18n/`.
+Keep the key sets in `en.json`, `fr.json`, and `zh-CN.json` aligned for any
+catalog set you touch; English remains the fallback locale.
 
 ## French slice coverage
 

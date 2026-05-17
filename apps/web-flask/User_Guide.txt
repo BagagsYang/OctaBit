@@ -1,11 +1,14 @@
 OCTABIT USER GUIDE
 
-This guide covers the Flask/browser version of OctaBit.
+This guide covers the legacy Flask-rendered browser fallback for OctaBit.
+Normal production traffic now uses the Vue frontend in `apps/web-vue/` with
+Flask providing the backend API.
 
 Official site: <https://octabit.cc>
 
 Project layout:
-- `apps/web-flask/` contains the current active browser interface and web service.
+- `apps/web-vue/` contains the production browser frontend.
+- `apps/web-flask/` contains the Flask backend API and legacy browser fallback.
 - `apps/macos/` contains the deprecated/paused native macOS application for reference.
 - `apps/windows/` contains the deprecated/paused native Windows application for reference.
 - `core/python-renderer/` contains the shared Python synthesis engine.
@@ -28,6 +31,11 @@ Important:
 ==================================================
 2. HOW TO START THE WEB APP
 ==================================================
+For production-style local development, start Flask on port 8000 and run the Vue
+frontend from `apps/web-vue/`.
+
+Legacy Flask fallback:
+
 1. Double-click `apps/web-flask/Launch_Synthesiser.command`, or run:
    `./.venv/bin/python3 apps/web-flask/app.py`
    On Windows, double-click `apps\web-flask\Launch_Synthesiser.bat`.
