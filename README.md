@@ -18,7 +18,7 @@ The production web frontend is the Vue 3 app in `apps/web-vue/`. Flask remains t
 | `apps/web-flask/` | Flask backend API, workspace/synthesis service, preview routes, tests, and legacy Flask-rendered frontend |
 | `core/python-renderer/` | Canonical MIDI-to-WAV renderer used by the Flask backend |
 | `assets/previews/` | Shared waveform preview WAV files served through the Flask backend |
-| `deploy/digitalocean/` | Non-Docker DigitalOcean production deployment notes, helper script, and Caddy examples for Vue production |
+| `deploy/production/` | Non-Docker production deployment notes, helper script, and Caddy examples for Vue production |
 | `deploy/web-flask/` | Docker image definition and notes for the Flask backend or legacy fallback path |
 | `compose.web.yml` | Minimal Docker Compose entrypoint for the Flask backend or legacy fallback path |
 | `docs/api-contract.md` | Web API request and response contract |
@@ -146,7 +146,7 @@ The intended production model runs without Docker:
 cd apps/web-vue && npm ci && npm run build
 ```
 
-For public deployment, keep Gunicorn private on `127.0.0.1:8000`. Caddy serves `apps/web-vue/dist` as the public frontend and reverse proxies `/api/*`, `/static/previews/*`, and `/synthesise*` to Flask. DigitalOcean deployment notes, Caddy examples, smoke checks, and rollback steps are in `deploy/digitalocean/README.md`.
+For public deployment, keep Gunicorn private on `127.0.0.1:8000`. Caddy serves `apps/web-vue/dist` as the public frontend and reverse proxies `/api/*`, `/static/previews/*`, and `/synthesise*` to Flask. Production deployment notes, Caddy examples, smoke checks, and rollback steps are in `deploy/production/README.md`.
 
 The Docker image in `deploy/web-flask/` remains available for a Flask-backend or legacy Flask-rendered fallback path. It pins its Python base image by digest and installs from hash-locked requirement files.
 

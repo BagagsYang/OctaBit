@@ -14,7 +14,7 @@ OctaBit is a monorepo. The current active contribution targets are:
 - `apps/web-flask/`: the Flask backend API, workspace/synthesis service, and
   legacy Flask-rendered frontend fallback.
 - `core/python-renderer/`: the canonical Python MIDI-to-WAV renderer.
-- `docs/`, `deploy/digitalocean/`, `deploy/web-flask/`, and `assets/previews/`: supporting
+- `docs/`, `deploy/production/`, `deploy/web-flask/`, and `assets/previews/`: supporting
   documentation, deployment, and shared asset areas.
 
 The native macOS and Windows apps under `apps/macos/` and `apps/windows/` are
@@ -78,7 +78,7 @@ For app-specific notes, start with:
 - [apps/web-vue/README.md](./apps/web-vue/README.md)
 - [apps/web-flask/README.md](./apps/web-flask/README.md)
 - [core/python-renderer/README.md](./core/python-renderer/README.md)
-- [deploy/digitalocean/README.md](./deploy/digitalocean/README.md)
+- [deploy/production/README.md](./deploy/production/README.md)
 
 ## Making changes
 

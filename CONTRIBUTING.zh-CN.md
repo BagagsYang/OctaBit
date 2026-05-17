@@ -11,7 +11,7 @@ OctaBit 是一个单体仓库。当前活跃的贡献目标是：
 - `apps/web-vue/`：生产 Vue 浏览器前端。
 - `apps/web-flask/`：Flask 后端 API、工作区/合成服务，以及旧 Flask 渲染前端回退。
 - `core/python-renderer/`：规范 Python MIDI 转 WAV 渲染器。
-- `docs/`、`deploy/digitalocean/`、`deploy/web-flask/` 和 `assets/previews/`：配套文档、部署和共享资源区域。
+- `docs/`、`deploy/production/`、`deploy/web-flask/` 和 `assets/previews/`：配套文档、部署和共享资源区域。
 
 `apps/macos/` 和 `apps/windows/` 下的原生 macOS 与 Windows 应用是暂停/参考区域。若要在这些区域做较大的工作，请先开 issue，让维护者确认范围。
 
@@ -65,7 +65,7 @@ python3 -m venv .venv
 - [apps/web-vue/README.md](./apps/web-vue/README.md)
 - [apps/web-flask/README.zh-CN.md](./apps/web-flask/README.zh-CN.md)
 - [core/python-renderer/README.zh-CN.md](./core/python-renderer/README.zh-CN.md)
-- [deploy/digitalocean/README.zh-CN.md](./deploy/digitalocean/README.zh-CN.md)
+- [deploy/production/README.zh-CN.md](./deploy/production/README.zh-CN.md)
 
 ## 修改代码或文档
 

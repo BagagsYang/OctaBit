@@ -101,8 +101,8 @@ Gunicorn 命令形态示例：
 ```
 
 `../../deploy/web-flask/` 下的 Docker 文件和 `../../compose.web.yml`
-仍保留为 Flask 后端或旧 Flask 渲染前端回退的另一种部署路径。当前 DigitalOcean 生产路径记录在
-`../../deploy/digitalocean/README.zh-CN.md`。
+仍保留为 Flask 后端或旧 Flask 渲染前端回退的另一种部署路径。当前生产路径记录在
+`../../deploy/production/README.zh-CN.md`。
 
 ## 输出命名
 

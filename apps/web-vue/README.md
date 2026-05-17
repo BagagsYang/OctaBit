@@ -37,7 +37,7 @@ npm ci
 npm run build
 ```
 
-The production build output is `apps/web-vue/dist`. The DigitalOcean production
+The production build output is `apps/web-vue/dist`. The production
 model serves that directory directly with Caddy and reverse proxies `/api/*`,
 `/static/previews/*`, and `/synthesise*` to Flask/Gunicorn on
-`127.0.0.1:8000`. See `../../deploy/digitalocean/README.md`.
+`127.0.0.1:8000`. See `../../deploy/production/README.md`.

@@ -8,7 +8,7 @@ OctaBit is a monorepo focused on the web app. Work from the repository root unle
 - `apps/web-flask/`: Flask backend API, workspace/synthesis service, preview routes, legacy Flask-rendered frontend fallback, launchers, and `unittest` tests.
 - `core/python-renderer/`: canonical MIDI-to-WAV renderer and renderer tests.
 - `assets/previews/`: shared waveform preview WAV files.
-- `deploy/digitalocean/`: non-Docker production deployment notes, Caddy examples, and Vue production helper script.
+- `deploy/production/`: non-Docker production deployment notes, Caddy examples, and Vue production helper script.
 - `deploy/web-flask/`, `compose.web.yml`, and `docs/`: Flask backend or legacy fallback deployment and API documentation.
 - `apps/macos/` and `apps/windows/`: deprecated/paused native apps retained for reference.
 

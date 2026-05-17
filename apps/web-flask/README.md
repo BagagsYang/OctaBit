@@ -111,8 +111,8 @@ Example Gunicorn shape:
 
 The Docker files under `../../deploy/web-flask/` and `../../compose.web.yml`
 remain an alternate Flask-backend or legacy Flask-rendered fallback deployment
-path. The current DigitalOcean production path is documented in
-`../../deploy/digitalocean/README.md`.
+path. The current production path is documented in
+`../../deploy/production/README.md`.
 
 ## Output naming
 

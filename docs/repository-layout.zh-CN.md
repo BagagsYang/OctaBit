@@ -19,7 +19,7 @@ Python 渲染器、共享预览资源、API 契约文档、部署文件和发布
 | `core/python-renderer/` | 规范 Python MIDI 转 WAV 渲染器和对齐参考实现。 |
 | `assets/previews/` | 各应用共享的规范波形预览 WAV 文件。 |
 | `docs/` | API 契约、仓库结构说明、许可证审计和评审报告。 |
-| `deploy/digitalocean/` | Vue 生产路径的非 Docker DigitalOcean 部署说明、辅助脚本和 Caddy 示例。 |
+| `deploy/production/` | Vue 生产路径的非 Docker 生产部署说明、辅助脚本和 Caddy 示例。 |
 | `deploy/web-flask/` | Flask 后端或旧前端回退路径的 Docker 部署文档和 Dockerfile。 |
 | `.github/workflows/` | 保留的 Windows 发布构建 GitHub Actions 工作流。 |
 | `compose.web.yml` | Flask 后端或旧前端回退路径的 Docker Compose 入口。 |
@@ -195,7 +195,7 @@ npm run build
 `127.0.0.1:8000`，systemd 管理服务，Caddy 提供 `apps/web-vue/dist`，并将
 `/api/*`、`/static/previews/*` 和 `/synthesise*` 反向代理到该私有 Gunicorn
 监听地址。上传目录、任务 TTL、最大上传大小和 Gunicorn timeout 应与当前合成任务行为保持一致。Caddy
-生产和回滚示例见 `deploy/digitalocean/README.zh-CN.md`。
+生产和回滚示例见 `deploy/production/README.zh-CN.md`。
 
 Docker 部署仍保留为 Flask 后端或旧前端回退的另一种路径：
 

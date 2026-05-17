@@ -1,4 +1,4 @@
-# DigitalOcean Vue Production Deployment
+# Vue Production Deployment
 
 This is the intended non-Docker production path for `octabit.cc`.
 
@@ -11,7 +11,7 @@ This is the intended non-Docker production path for `octabit.cc`.
   switching Caddy back to full reverse proxy mode.
 
 The Docker files in `deploy/web-flask/` are an alternate Flask-backend or
-legacy fallback path. Do not introduce Docker into the current DigitalOcean
+legacy fallback path. Do not introduce Docker into the current production
 cutover unless the production plan changes.
 
 ## One-Time Server Shape
@@ -91,13 +91,13 @@ If deploying this branch before merge, set `BRANCH=feature/vue-frontend` when
 using the helper script:
 
 ```bash
-BRANCH=feature/vue-frontend deploy/digitalocean/deploy-vue-production.sh
+BRANCH=feature/vue-frontend deploy/production/deploy-vue-production.sh
 ```
 
 After merge, the default helper script target is `main`:
 
 ```bash
-deploy/digitalocean/deploy-vue-production.sh
+deploy/production/deploy-vue-production.sh
 ```
 
 ## Smoke Checks

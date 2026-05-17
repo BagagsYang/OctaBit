@@ -1,4 +1,4 @@
-# DigitalOcean Vue 生产部署
+# Vue 生产部署
 
 这是 `octabit.cc` 预期使用的非 Docker 生产路径。
 
@@ -8,7 +8,7 @@
 - Flask/Gunicorn 继续作为私有后端，负责工作区、上传、合成、下载、预览资源和旧路由兼容。
 - Flask 渲染页面仍保留在仓库中；如果切换失败，可把 Caddy 切回完整反向代理模式恢复它。
 
-`deploy/web-flask/` 中的 Docker 文件是 Flask 后端或旧前端回退的另一条路径。除非生产计划改变，不要把 Docker 引入当前 DigitalOcean 切换流程。
+`deploy/web-flask/` 中的 Docker 文件是 Flask 后端或旧前端回退的另一条路径。除非生产计划改变，不要把 Docker 引入当前生产切换流程。
 
 ## 一次性服务器形态
 
@@ -82,13 +82,13 @@ sudo systemctl reload caddy
 如果合并前先部署当前分支，使用辅助脚本时设置 `BRANCH=feature/vue-frontend`：
 
 ```bash
-BRANCH=feature/vue-frontend deploy/digitalocean/deploy-vue-production.sh
+BRANCH=feature/vue-frontend deploy/production/deploy-vue-production.sh
 ```
 
 合并后，辅助脚本默认目标是 `main`：
 
 ```bash
-deploy/digitalocean/deploy-vue-production.sh
+deploy/production/deploy-vue-production.sh
 ```
 
 ## Smoke 检查

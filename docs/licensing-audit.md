@@ -25,7 +25,7 @@ Reviewed repository areas:
 - Shared code and assets: `core/python-renderer/` and `assets/previews/`.
 - Documentation and generated review artefacts: `docs/`, tracked files under
   `output/pdf/`, and tracked files under `tmp/pdfs/`.
-- Deployment and packaging: `deploy/digitalocean/`, `deploy/web-flask/Dockerfile`,
+- Deployment and packaging: `deploy/production/`, `deploy/web-flask/Dockerfile`,
   `compose.web.yml`, `apps/windows/installer/Midi8BitSynthesiser.iss`,
   `apps/windows/scripts/create_review_bundle.sh`, and the macOS Xcode build
   phase script.

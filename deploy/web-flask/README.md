@@ -3,10 +3,10 @@
 Language/语言: English | [简体中文](./README.zh-CN.md)
 
 This Docker path packages the Flask backend and legacy Flask-rendered frontend
-fallback. The intended DigitalOcean production path is non-Docker: Caddy serves
+fallback. The intended production path is non-Docker: Caddy serves
 the Vue build from `apps/web-vue/dist` and reverse proxies API/preview/legacy
 routes to Flask/Gunicorn on `127.0.0.1:8000`. See
-`../digitalocean/README.md`.
+`../production/README.md`.
 
 The image includes `apps/web-flask/`, the shared renderer entrypoint in
 `core/python-renderer/`, the shared preview WAV files in `assets/previews/`,

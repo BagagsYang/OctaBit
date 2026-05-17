@@ -24,7 +24,7 @@ documentation.
 | `core/python-renderer/` | Canonical Python MIDI-to-WAV renderer and parity reference. |
 | `assets/previews/` | Canonical waveform preview WAV files shared by the apps. |
 | `docs/` | API contract, repository layout notes, licensing audit, and review reports. |
-| `deploy/digitalocean/` | Non-Docker DigitalOcean production deployment notes, helper script, and Caddy examples for Vue production. |
+| `deploy/production/` | Non-Docker production deployment notes, helper script, and Caddy examples for Vue production. |
 | `deploy/web-flask/` | Docker deployment documentation and Dockerfile for the Flask backend or legacy fallback path. |
 | `.github/workflows/` | Retained GitHub Actions workflow for Windows release builds. |
 | `compose.web.yml` | Docker Compose entry point for the Flask backend or legacy fallback path. |
@@ -234,7 +234,7 @@ managing the service, and Caddy serving `apps/web-vue/dist` while reverse
 proxying `/api/*`, `/static/previews/*`, and `/synthesise*` to that private
 Gunicorn listener. Keep the upload directory, job TTL, maximum upload size, and
 Gunicorn timeout aligned with the current synthesis job behaviour. See
-`deploy/digitalocean/README.md` for the Caddy production and rollback examples.
+`deploy/production/README.md` for the Caddy production and rollback examples.
 
 The Docker deployment remains available as an alternate Flask-backend or legacy
 fallback path:
