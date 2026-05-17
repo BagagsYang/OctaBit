@@ -34,13 +34,18 @@ Important:
 For production-style local development, start Flask on port 8000 and run the Vue
 frontend from `apps/web-vue/`.
 
-Legacy Flask fallback:
+The launcher scripts do that for you after Vue dependencies have been installed
+with `cd apps/web-vue && npm ci`.
 
 1. Double-click `apps/web-flask/Launch_Synthesiser.command`, or run:
-   `./.venv/bin/python3 apps/web-flask/app.py`
+   `apps/web-flask/Launch_Synthesiser.command`
    On Windows, double-click `apps\web-flask\Launch_Synthesiser.bat`.
-2. Wait for the browser to open `http://127.0.0.1:5002`.
-3. Keep the terminal window open while the Flask app is running.
+2. Wait for the browser to open `http://127.0.0.1:5173`.
+3. Keep the terminal window open while the Vue app is running. On Windows,
+   also leave the Flask API window open.
+
+Legacy Flask fallback:
+- Run `./.venv/bin/python3 apps/web-flask/app.py` directly.
 
 ==================================================
 3. HOW TO USE THE WEB APP

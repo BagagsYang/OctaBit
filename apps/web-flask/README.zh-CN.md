@@ -20,10 +20,10 @@ Language/语言: [English](./README.md) | 简体中文
 ```bash
 python3 -m venv .venv
 ./.venv/bin/python3 -m pip install -r apps/web-flask/requirements.txt
-./.venv/bin/python3 apps/web-flask/app.py
+PORT=8000 WEB_FLASK_OPEN_BROWSER=0 ./.venv/bin/python3 apps/web-flask/app.py
 ```
 
-或者运行辅助脚本：
+或者运行同时启动 Vue 前端和 Flask 后端的辅助脚本：
 
 ```bash
 apps/web-flask/Launch_Synthesiser.command
@@ -34,6 +34,9 @@ apps/web-flask/Launch_Synthesiser.command
 ```bat
 apps\web-flask\Launch_Synthesiser.bat
 ```
+
+辅助脚本要求先用 `cd apps/web-vue && npm ci` 安装一次 Vue 依赖，然后会打开
+`http://127.0.0.1:5173` 上的 Vue dev server。
 
 ## 共享依赖
 

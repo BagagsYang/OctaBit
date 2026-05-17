@@ -21,10 +21,10 @@ From the repository root:
 ```bash
 python3 -m venv .venv
 ./.venv/bin/python3 -m pip install -r apps/web-flask/requirements.txt
-./.venv/bin/python3 apps/web-flask/app.py
+PORT=8000 WEB_FLASK_OPEN_BROWSER=0 ./.venv/bin/python3 apps/web-flask/app.py
 ```
 
-Or launch the helper script:
+Or launch the Vue frontend plus Flask backend helper script:
 
 ```bash
 apps/web-flask/Launch_Synthesiser.command
@@ -35,6 +35,10 @@ On Windows, use:
 ```bat
 apps\web-flask\Launch_Synthesiser.bat
 ```
+
+The helper scripts expect Vue dependencies to be installed once with
+`cd apps/web-vue && npm ci`, then they open the Vue dev server at
+`http://127.0.0.1:5173`.
 
 ## Shared dependencies
 
